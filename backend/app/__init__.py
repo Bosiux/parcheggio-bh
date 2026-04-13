@@ -15,6 +15,6 @@ def create_app():
     CORS(app, supports_credentials=True, origins=os.getenv("FRONTEND_URL", "http://localhost:5173"))
 
     from app.routes.api import api_bp
-    app.register_blueprint(api_bp, url_prefix="/api")
+    app.register_blueprint(api_bp)
 
     return app

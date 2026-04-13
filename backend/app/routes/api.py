@@ -1,7 +1,8 @@
-from flask import Blueprint, Flask, request, jsonify
+
+from flask import Blueprint, request, jsonify
 import uuid
+
 api_bp = Blueprint("api", __name__)
-app = Flask(__name__)
 
 users = [
     {
@@ -21,8 +22,7 @@ users = [
 sessions = {}
 
 
-
-@app.route("/login", methods=["POST"])
+@api_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
 
@@ -48,7 +48,6 @@ def login():
     return {"error": "credenziali errate"}, 401
 
 
-
 def get_current_user():
     token = request.headers.get("Authorization")
 
@@ -58,8 +57,7 @@ def get_current_user():
     return sessions.get(token)
 
 
-
-@app.route("/api/users", methods=["GET"])
+@api_bp.route("/api/users", methods=["GET"])
 def get_users():
     session = get_current_user()
 
@@ -71,20 +69,18 @@ def get_users():
 
     return jsonify(users)
 
-@app.route("/api/user/<user_id>", methods=["GET"])
+@api_bp.route("/api/user/<user_id>", methods=["GET"])
 def get_user(user_id):
     session = get_current_user()
 
     if not session:
         return {"error": "non autenticato"}, 401
 
-
     if session["role"] == "admin":
         for u in users:
             if u["id"] == user_id:
                 return u
         return {"error": "utente non trovato"}, 404
-
 
     if session["user_id"] == user_id:
         for u in users:
@@ -95,7 +91,7 @@ def get_user(user_id):
     return {"error": "non autorizzato"}, 403
 
 
-@app.route("/api/user", methods=["POST"])
+@api_bp.route("/api/user", methods=["POST"])
 def create_user():
     session = get_current_user()
 
@@ -118,8 +114,7 @@ def create_user():
     return nuovo, 201
 
 
-
-@app.route("/api/user/<user_id>", methods=["DELETE"])
+@api_bp.route("/api/user/<user_id>", methods=["DELETE"])
 def delete_user(user_id):
     session = get_current_user()
 
@@ -136,7 +131,3 @@ def delete_user(user_id):
 
     return {"error": "utente non trovato"}, 404
 
-
-
-if __name__ == "__main__":
-    app.run(debug=True)

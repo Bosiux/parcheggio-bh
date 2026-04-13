@@ -18,16 +18,16 @@ Content-Type: application/json
 
 ### GET ALL USERS
 GET http://127.0.0.1:3000/api/users
-Authorization: REPLACE_WITH_TOKEN
+Authorization: "31e58503-a879-435f-907a-9a6ddccccd35"
 
 ### GET SINGLE USER
 GET http://127.0.0.1:3000/api/user/1
-Authorization: REPLACE_WITH_TOKEN
+Authorization: "31e58503-a879-435f-907a-9a6ddccccd35"
 
 ### CREATE USER
 POST http://127.0.0.1:3000/api/user
 Content-Type: application/json
-Authorization: REPLACE_WITH_TOKEN
+Authorization: "31e58503-a879-435f-907a-9a6ddccccd35"
 
 {
   "username": "nuovoUser",
@@ -37,4 +37,4 @@ Authorization: REPLACE_WITH_TOKEN
 
 ### DELETE USER
 DELETE http://127.0.0.1:3000/api/user/1
-Authorization: REPLACE_WITH_TOKEN
+Authorization: "31e58503-a879-435f-907a-9a6ddccccd35"
