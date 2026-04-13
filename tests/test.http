@@ -1,0 +1,40 @@
+### LOGIN ADMIN
+POST http://127.0.0.1:3000/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "1234"
+}
+
+### LOGIN USER
+POST http://127.0.0.1:3000/login
+Content-Type: application/json
+
+{
+  "username": "user",
+  "password": "1234"
+}
+
+### GET ALL USERS
+GET http://127.0.0.1:3000/api/users
+Authorization: REPLACE_WITH_TOKEN
+
+### GET SINGLE USER
+GET http://127.0.0.1:3000/api/user/1
+Authorization: REPLACE_WITH_TOKEN
+
+### CREATE USER
+POST http://127.0.0.1:3000/api/user
+Content-Type: application/json
+Authorization: REPLACE_WITH_TOKEN
+
+{
+  "username": "nuovoUser",
+  "password": "1234",
+  "role": "user"
+}
+
+### DELETE USER
+DELETE http://127.0.0.1:3000/api/user/1
+Authorization: REPLACE_WITH_TOKEN
