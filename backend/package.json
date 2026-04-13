@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "[ -d .venv ] && .venv/bin/flask --app run run --debug --port 3000 || (echo '\\n[ERRORE] Virtualenv non trovato. Esegui: npm run setup\\n' && exit 1)",
-    "start": ".venv/bin/flask --app run run --port 3000",
-    "install:py": "python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"
+    "dev": "node scripts/dev.js",
+    "start": "node scripts/start.js",
+    "install:py": "node scripts/install-py.js"
   }
 }
