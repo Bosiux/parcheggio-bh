@@ -2,9 +2,8 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button, Input, Card, CardBody } from "@heroui/react";
-import { login as apiLogin } from "../api/auth.api.js";
+import { login as apiLogin, register as apiRegister } from "../api/auth.api.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { img } from "framer-motion/client";
 
 const iconStyle = {
   width: 22,
@@ -20,8 +19,10 @@ const iconAlarmStyle = {
 };
 
 export default function LoginPage() {
+  const [mode, setMode] = useState("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -44,9 +45,23 @@ export default function LoginPage() {
       setError("Inserisci username e password.");
       return;
     }
+    if (mode === "register") {
+      if (password.trim().length < 6) {
+        setError("La password deve contenere almeno 6 caratteri.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Le password non coincidono.");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      const userData = await apiLogin(username.trim(), password);
+      const userData =
+        mode === "register"
+          ? await apiRegister({ username: username.trim(), password: password.trim() })
+          : await apiLogin(username.trim(), password);
       login(userData);
       // Usa il redirect precedente solo se compatibile col ruolo.
       if (isAllowedPathForRole(from, userData.role)) {
@@ -152,7 +167,7 @@ export default function LoginPage() {
                 textAlign: "center",
               }}
             >
-              Accedi al portale
+              {mode === "login" ? "Accedi al portale" : "Crea account utente"}
             </h2>
 
             {error && (
@@ -221,6 +236,26 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
 
+              {mode === "register" && (
+                <Input
+                  id="register-password-confirm"
+                  label="Conferma password"
+                  labelPlacement="outside"
+                  placeholder="Ripeti la password"
+                  value={confirmPassword}
+                  onValueChange={setConfirmPassword}
+                  type={showPassword ? "text" : "password"}
+                  variant="bordered"
+                  classNames={{
+                    inputWrapper: "border-[var(--border-default)] bg-[var(--login-input-bg)] hover:border-yellow-500/50 focus-within:border-yellow-500",
+                    input: "!text-[var(--text-primary)] !font-medium placeholder:!text-[var(--text-secondary)]",
+                    label: "!text-[var(--login-label-color)] !opacity-100 mb-1 font-bold",
+                  }}
+                  isDisabled={loading}
+                  autoComplete="new-password"
+                />
+              )}
+
               <Button
                 id="login-submit"
                 type="submit"
@@ -237,7 +272,30 @@ export default function LoginPage() {
                 size="lg"
                 fullWidth
               >
-                {loading ? "Accesso in corso..." : "Accedi"}
+                {loading
+                  ? mode === "login"
+                    ? "Accesso in corso..."
+                    : "Registrazione in corso..."
+                  : mode === "login"
+                  ? "Accedi"
+                  : "Registrati"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="light"
+                isDisabled={loading}
+                onPress={() => {
+                  setMode((prev) => (prev === "login" ? "register" : "login"));
+                  setError("");
+                  setPassword("");
+                  setConfirmPassword("");
+                }}
+                style={{ color: "var(--text-secondary)", fontWeight: 600 }}
+              >
+                {mode === "login"
+                  ? "Non hai un account? Registrati"
+                  : "Hai già un account? Accedi"}
               </Button>
             </form>
           </CardBody>

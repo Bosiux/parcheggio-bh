@@ -1,5 +1,5 @@
 {
-  "name": "parcheggio-bh-frontend",
+  "name": "my-project",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,8 +13,10 @@
     "@heroui/react": "^2.6.14",
     "d3": "^7.9.0",
     "framer-motion": "^11.0.0",
+    "leaflet": "^1.9.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.26.0"
   },
   "devDependencies": {

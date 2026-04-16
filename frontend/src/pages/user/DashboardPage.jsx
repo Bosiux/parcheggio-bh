@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { getAreas } from "../../api/parking.api.js";
 import Layout from "../../components/Layout.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import ParkingGeoMap from "../../components/ParkingGeoMap.jsx";
 
 function AvailabilityBadge({ available, total }) {
   const pct = total > 0 ? (available / total) * 100 : 0;
@@ -53,6 +54,17 @@ export default function DashboardPage() {
     const interval = setInterval(fetchAreas, 30000);
     return () => clearInterval(interval);
   }, [fetchAreas]);
+
+  const mapPoints = areas.map((area, index) => ({
+    id: area.id,
+    label: area.name || `Parcheggio ${area.id}`,
+    available: Number(area.availableSpots ?? area.available ?? 0),
+    occupied: 0,
+    revenue: 0,
+    isUnderMaintenance: Boolean(area.isUnderMaintenance),
+    lat: Number(area.mapPoint?.lat ?? (45.53 + index * 0.003)),
+    lng: Number(area.mapPoint?.lng ?? (10.21 + index * 0.003)),
+  }));
 
   return (
     <Layout>
@@ -132,6 +144,16 @@ export default function DashboardPage() {
 
       {/* Areas grid */}
       {areas.length > 0 && (
+        <ParkingGeoMap
+          mode="user"
+          title="Mappa parcheggi"
+          subtitle="Vista geografica con i posti disponibili per area"
+          points={mapPoints}
+        />
+      )}
+
+      {/* Areas grid */}
+      {areas.length > 0 && (
         <div
           style={{
             display: "grid",
@@ -142,7 +164,12 @@ export default function DashboardPage() {
           {areas.map((area) => {
             const available = area.availableSpots ?? area.available ?? 0;
             const total = area.capacity ?? area.total ?? 0;
+            const isUnderMaintenance = Boolean(area.isUnderMaintenance);
+            const hourlyRate = Number(area.hourlyRate ?? 0);
+            const oneHourTotal = Number((hourlyRate * 1).toFixed(2));
+            const twoHoursTotal = Number((hourlyRate * 2).toFixed(2));
             const isFull = available === 0;
+            const isBookable = !isUnderMaintenance && !isFull;
             const pct = total > 0 ? Math.round((available / total) * 100) : 0;
 
             return (
@@ -173,7 +200,12 @@ export default function DashboardPage() {
                         {area.name || `Parcheggio ${area.id}`}
                       </h3>
                     </div>
-                    <AvailabilityBadge available={available} total={total} />
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.35rem" }}>
+                      <AvailabilityBadge available={available} total={total} />
+                      {isUnderMaintenance && (
+                        <Chip size="sm" color="warning" variant="flat">In manutenzione</Chip>
+                      )}
+                    </div>
                   </div>
 
                   {/* Availability bar */}
@@ -200,7 +232,7 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Stats row */}
-                  <div style={{ display: "flex", gap: "1.5rem" }}>
+                  <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
                     <div>
                       <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Liberi</div>
                       <div style={{ color: "#22c55e", fontWeight: 700, fontSize: "1.25rem" }}>{available}</div>
@@ -213,6 +245,33 @@ export default function DashboardPage() {
                       <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Totale</div>
                       <div style={{ color: "var(--text-secondary)", fontWeight: 700, fontSize: "1.25rem" }}>{total}</div>
                     </div>
+                    <div>
+                      <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tariffa</div>
+                      <div style={{ color: "#bdb23c", fontWeight: 700, fontSize: "1.1rem" }}>
+                        {isUnderMaintenance ? "Sospesa" : `€ ${hourlyRate.toFixed(2)}/h`}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: "0.9rem",
+                      background: "rgba(189,178,60,0.08)",
+                      border: "1px solid rgba(189,178,60,0.2)",
+                      borderRadius: 10,
+                      padding: "0.65rem 0.75rem",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                    }}
+                  >
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>Stima rapida</span>
+                    <span style={{ color: "var(--text-primary)", fontSize: "0.8rem", fontWeight: 600 }}>
+                      {isUnderMaintenance
+                        ? "Costi non disponibili"
+                        : `1h: € ${oneHourTotal.toFixed(2)} · 2h: € ${twoHoursTotal.toFixed(2)}`}
+                    </span>
                   </div>
                 </CardBody>
 
@@ -220,10 +279,10 @@ export default function DashboardPage() {
                   <Button
                     id={`book-area-${area.id}`}
                     fullWidth
-                    isDisabled={isFull}
+                    isDisabled={!isBookable}
                     onPress={() => navigate(`/booking/${area.id}`, { state: { area } })}
                     style={
-                      isFull
+                      !isBookable
                         ? { background: "var(--surface-05)", color: "var(--text-subtle)" }
                         : {
                             background: "linear-gradient(135deg, #bdb23c, #9b9b00)",
@@ -233,7 +292,7 @@ export default function DashboardPage() {
                           }
                     }
                   >
-                    {isFull ? "Parcheggio pieno" : "Prenota ora →"}
+                    {isUnderMaintenance ? "Area in manutenzione" : isFull ? "Parcheggio pieno" : "Prenota ora →"}
                   </Button>
                 </CardFooter>
               </Card>

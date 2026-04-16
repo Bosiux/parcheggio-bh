@@ -11,6 +11,7 @@ import {
   Input,
   Button,
   Chip,
+  Switch,
   Spinner,
   Modal,
   ModalContent,
@@ -35,7 +36,7 @@ export default function ManageAreasPage() {
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [editingArea, setEditingArea] = useState(null);
-  const [form, setForm] = useState({ id: "", name: "", capacity: "", availableSpots: "" });
+  const [form, setForm] = useState({ id: "", name: "", capacity: "", availableSpots: "", hourlyRate: "", isUnderMaintenance: false });
 
   const loadAreas = async () => {
     setLoading(true);
@@ -71,6 +72,8 @@ export default function ManageAreasPage() {
       name: String(area.name ?? ""),
       capacity: String(area.capacity ?? ""),
       availableSpots: String(area.availableSpots ?? ""),
+      hourlyRate: String(area.hourlyRate ?? "0"),
+      isUnderMaintenance: Boolean(area.isUnderMaintenance),
     });
     setError("");
     onOpen();
@@ -81,6 +84,7 @@ export default function ManageAreasPage() {
     const name = String(form.name ?? "").trim();
     const capacity = toInt(form.capacity);
     const availableSpots = toInt(form.availableSpots);
+    const hourlyRate = Number(String(form.hourlyRate ?? "").trim());
 
     if (!id) return "L'ID area è obbligatorio.";
     if (!/^[A-Z0-9-]{2,20}$/.test(id)) {
@@ -94,6 +98,9 @@ export default function ManageAreasPage() {
     }
     if (availableSpots > capacity) {
       return "I posti disponibili non possono superare la capienza.";
+    }
+    if (!Number.isFinite(hourlyRate) || hourlyRate < 0) {
+      return "La tariffa oraria deve essere un numero >= 0.";
     }
 
     const occupiedBefore = Math.max(
@@ -136,6 +143,8 @@ export default function ManageAreasPage() {
         name: String(form.name ?? "").trim() || undefined,
         capacity: toInt(form.capacity),
         availableSpots: toInt(form.availableSpots),
+        hourlyRate: Number(Number(form.hourlyRate).toFixed(2)),
+        isUnderMaintenance: Boolean(form.isUnderMaintenance),
       };
       const updated = await updateArea(editingArea.id, payload);
 
@@ -156,6 +165,10 @@ export default function ManageAreasPage() {
 
   const totalCapacity = areas.reduce((sum, area) => sum + Number(area.capacity || 0), 0);
   const totalAvailable = areas.reduce((sum, area) => sum + Number(area.availableSpots || 0), 0);
+  const avgRate =
+    areas.length > 0
+      ? areas.reduce((sum, area) => sum + Number(area.hourlyRate || 0), 0) / areas.length
+      : 0;
 
   return (
     <Layout>
@@ -192,6 +205,12 @@ export default function ManageAreasPage() {
           <CardBody style={{ padding: "1rem" }}>
             <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", margin: 0 }}>Posti disponibili</p>
             <p style={{ color: "#22c55e", fontWeight: 800, fontSize: "1.5rem", margin: 0 }}>{totalAvailable}</p>
+          </CardBody>
+        </Card>
+        <Card style={{ background: "var(--surface-04)", border: "1px solid var(--border-soft)" }}>
+          <CardBody style={{ padding: "1rem" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", margin: 0 }}>Tariffa media</p>
+            <p style={{ color: "#bdb23c", fontWeight: 800, fontSize: "1.5rem", margin: 0 }}>€ {avgRate.toFixed(2)}/h</p>
           </CardBody>
         </Card>
       </div>
@@ -265,6 +284,11 @@ export default function ManageAreasPage() {
                       <Chip size="sm" variant="flat" color={pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success"}>
                         {pct}%
                       </Chip>
+                      {area.isUnderMaintenance && (
+                        <Chip size="sm" variant="flat" color="warning">
+                          Manutenzione
+                        </Chip>
+                      )}
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "0.75rem" }}>
@@ -275,6 +299,10 @@ export default function ManageAreasPage() {
                       <div style={{ background: "var(--surface-02)", borderRadius: 10, padding: "0.55rem" }}>
                         <div style={{ color: "var(--text-subtle)", fontSize: "0.7rem" }}>Disponibili</div>
                         <div style={{ color: "#22c55e", fontWeight: 700 }}>{area.availableSpots}</div>
+                      </div>
+                      <div style={{ background: "var(--surface-02)", borderRadius: 10, padding: "0.55rem" }}>
+                        <div style={{ color: "var(--text-subtle)", fontSize: "0.7rem" }}>Tariffa</div>
+                        <div style={{ color: "#bdb23c", fontWeight: 700 }}>€ {Number(area.hourlyRate || 0).toFixed(2)}/h</div>
                       </div>
                     </div>
 
@@ -321,6 +349,8 @@ export default function ManageAreasPage() {
                 <TableColumn>Nome</TableColumn>
                 <TableColumn>Capienza</TableColumn>
                 <TableColumn>Disponibili</TableColumn>
+                <TableColumn>Tariffa/h</TableColumn>
+                <TableColumn>Stato</TableColumn>
                 <TableColumn>Occupazione</TableColumn>
                 <TableColumn>Azioni</TableColumn>
               </TableHeader>
@@ -340,6 +370,12 @@ export default function ManageAreasPage() {
                       </TableCell>
                       <TableCell>{area.capacity}</TableCell>
                       <TableCell>{area.availableSpots}</TableCell>
+                      <TableCell>€ {Number(area.hourlyRate || 0).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Chip size="sm" variant="flat" color={area.isUnderMaintenance ? "warning" : "success"}>
+                          {area.isUnderMaintenance ? "Manutenzione" : "Operativa"}
+                        </Chip>
+                      </TableCell>
                       <TableCell>
                         <Chip
                           size="sm"
@@ -422,6 +458,23 @@ export default function ManageAreasPage() {
                   onValueChange={(val) => setForm((prev) => ({ ...prev, availableSpots: val }))}
                   variant="bordered"
                 />
+                <Input
+                  label="Tariffa oraria (€)"
+                  labelPlacement="outside"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={form.hourlyRate}
+                  onValueChange={(val) => setForm((prev) => ({ ...prev, hourlyRate: val }))}
+                  variant="bordered"
+                />
+                <Switch
+                  isSelected={form.isUnderMaintenance}
+                  onValueChange={(value) => setForm((prev) => ({ ...prev, isUnderMaintenance: value }))}
+                  color="warning"
+                >
+                  Area in manutenzione
+                </Switch>
               </ModalBody>
               <ModalFooter>
                 <Button variant="flat" onPress={onClose} style={{ color: "var(--text-muted)" }}>

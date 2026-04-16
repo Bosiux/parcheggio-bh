@@ -1,34 +1,68 @@
-// src/api/auth.api.js — MOCK TEMPORANEO (nessun backend richiesto)
-// Credenziali disponibili:
-//   utente:  username "user"  | password "user123"
-//   admin:   username "admin" | password "admin123"
+import {
+  setSessionCookie,
+  getSessionCookie,
+  clearSessionArtifacts,
+  saveEncryptedTokens,
+} from "../security/authSession.security.js";
 
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-const USERS = {
-  user:  { id: 1, username: "user",  role: "user" },
-  admin: { id: 2, username: "admin", role: "admin" },
-};
-const PASSWORDS = { user: "user123", admin: "admin123" };
+async function authRequest(path, method, body = null) {
+  const options = {
+    method,
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  };
 
-let currentUser = null;
+  if (body) options.body = JSON.stringify(body);
+
+  const res = await fetch(`${BASE_URL}${path}`, options);
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(payload.message || "Errore autenticazione");
+  return payload;
+}
+
+async function persistSession(payload) {
+  if (!payload?.sessionId || !payload?.tokens) return;
+  setSessionCookie(payload.sessionId, 2 * 60 * 60);
+  await saveEncryptedTokens(payload.tokens, payload.sessionId);
+}
 
 export const login = async (username, password) => {
-  await delay(600);
-  if (!USERS[username] || PASSWORDS[username] !== password)
-    throw new Error("Credenziali non valide.");
-  currentUser = USERS[username];
-  return currentUser;
+  const payload = await authRequest("/auth/login", "POST", { username, password });
+  await persistSession(payload);
+  return payload.user;
+};
+
+export const register = async ({ username, password }) => {
+  const payload = await authRequest("/auth/register", "POST", { username, password });
+  await persistSession(payload);
+  return payload.user;
 };
 
 export const logout = async () => {
-  await delay(300);
-  currentUser = null;
+  try {
+    await authRequest("/auth/logout", "POST");
+  } finally {
+    clearSessionArtifacts();
+  }
   return null;
 };
 
 export const getMe = async () => {
-  await delay(200);
-  if (!currentUser) throw new Error("Non autenticato.");
-  return currentUser;
+  const payload = await authRequest("/auth/me", "GET");
+  return payload.user;
+};
+
+export const refreshAccessToken = async () => {
+  const payload = await authRequest("/auth/refresh", "POST", {
+    sessionId: getSessionCookie(),
+  });
+
+  const sessionId = payload.sessionId || getSessionCookie();
+  if (sessionId && payload.tokens) {
+    await saveEncryptedTokens(payload.tokens, sessionId);
+  }
+
+  return payload.tokens || null;
 };

@@ -6,6 +6,7 @@ import { getAllAreas } from "../../api/admin.api.js";
 import { getAllBookings } from "../../api/admin.api.js";
 import Layout from "../../components/Layout.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import ParkingGeoMap from "../../components/ParkingGeoMap.jsx";
 
 function StatCard({ icon, label, value, color, onClick, id }) {
   return (
@@ -118,6 +119,58 @@ export default function AdminDashboard() {
     fetchData();
   }, []);
 
+  const now = new Date();
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(startOfDay);
+  endOfDay.setDate(endOfDay.getDate() + 1);
+
+  const computeDailyRevenue = (booking, fallbackHourlyRate) => {
+    if (booking?.status === "cancelled") return 0;
+
+    const start = new Date(booking.startTime);
+    const end = new Date(booking.endTime);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return 0;
+
+    const overlapStart = new Date(Math.max(start.getTime(), startOfDay.getTime()));
+    const overlapEnd = new Date(Math.min(end.getTime(), endOfDay.getTime(), now.getTime()));
+    if (overlapEnd <= overlapStart) return 0;
+
+    const overlapHours = (overlapEnd.getTime() - overlapStart.getTime()) / 3600000;
+    const effectiveRate = Number(booking.hourlyRate ?? fallbackHourlyRate ?? 0);
+    return overlapHours * effectiveRate;
+  };
+
+  const mapPoints = areas.map((area, index) => {
+    const isUnderMaintenance = Boolean(area.isUnderMaintenance);
+    const available = isUnderMaintenance ? 0 : Number(area.availableSpots ?? area.available ?? 0);
+    const capacity = Number(area.capacity ?? area.total ?? 0);
+    const occupied = isUnderMaintenance ? 0 : Math.max(0, capacity - available);
+    const hourlyRate = Number(area.hourlyRate ?? 0);
+
+    const bookingRevenue = isUnderMaintenance
+      ? 0
+      : bookings
+          .filter((booking) => booking.areaId === area.id)
+          .reduce((sum, booking) => sum + computeDailyRevenue(booking, hourlyRate), 0);
+
+    // Nel mock la disponibilita puo essere uno snapshot aggregato non perfettamente allineato alle singole prenotazioni.
+    // Applichiamo quindi un floor minimo coerente con i posti occupati correnti.
+    const occupancyRevenueFloor = isUnderMaintenance ? 0 : occupied * hourlyRate;
+    const revenue = Math.max(bookingRevenue, occupancyRevenueFloor);
+
+    return {
+      id: area.id,
+      label: area.name || `Parcheggio ${area.id}`,
+      available,
+      occupied,
+      revenue: Number(revenue.toFixed(2)),
+      isUnderMaintenance,
+      lat: Number(area.mapPoint?.lat ?? (45.53 + index * 0.003)),
+      lng: Number(area.mapPoint?.lng ?? (10.21 + index * 0.003)),
+    };
+  });
+
   const activeBookings = bookings.filter((b) => b.status === "active").length;
   const totalCapacity  = areas.reduce((sum, a) => sum + (a.capacity ?? a.total ?? 0), 0);
   const totalAvailable = areas.reduce((sum, a) => sum + (a.availableSpots ?? a.available ?? 0), 0);
@@ -218,6 +271,13 @@ export default function AdminDashboard() {
               </div>
             </CardBody>
           </Card>
+
+          <ParkingGeoMap
+            mode="admin"
+            title="Mappa operativa parcheggi"
+            subtitle="Ogni geopoint mostra posti liberi, posti occupati e ricavi giornalieri"
+            points={mapPoints}
+          />
         </>
       )}
 

@@ -42,6 +42,15 @@ function formatTime(iso) {
   });
 }
 
+function computeTotal(booking) {
+  if (Number.isFinite(Number(booking.totalPrice))) {
+    return Number(booking.totalPrice);
+  }
+  const durationHours = Number.parseInt(String(booking.durationHours ?? booking.duration ?? "1").replace("h", "").trim(), 10) || 1;
+  const hourlyRate = Number(booking.hourlyRate ?? 0);
+  return Number((durationHours * hourlyRate).toFixed(2));
+}
+
 export default function HistoryPage() {
   const [bookings, setBookings]   = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -73,6 +82,7 @@ export default function HistoryPage() {
     { key: "start",     label: "Inizio" },
     { key: "end",       label: "Fine" },
     { key: "duration",  label: "Durata" },
+    { key: "total",     label: "Totale" },
     { key: "status",    label: "Stato" },
   ];
 
@@ -210,7 +220,7 @@ export default function HistoryPage() {
                   {booking.areaName || booking.area?.name || `Area ${booking.areaId}`}
                 </div>
                 <div style={{ color: "var(--text-subtle)", fontSize: "0.78rem", marginBottom: "0.65rem" }}>
-                  ID {booking.areaId} · Durata {booking.duration || "1h"}
+                  ID {booking.areaId} · Durata {booking.duration || "1h"} · Totale € {computeTotal(booking).toFixed(2)}
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
@@ -273,6 +283,11 @@ export default function HistoryPage() {
                       <Chip size="sm" variant="flat" color="secondary">
                         {booking.duration || "1h"}
                       </Chip>
+                    </TableCell>
+                    <TableCell>
+                      <span style={{ color: "#bdb23c", fontWeight: 700 }}>
+                        € {computeTotal(booking).toFixed(2)}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <StatusChip status={booking.status} />

@@ -3,12 +3,16 @@ const { existsSync } = require('fs');
 const { join } = require('path');
 
 const isWin = process.platform === 'win32';
-const root = join(__dirname, '..');
-const flask = join(root, '.venv', isWin ? 'Scripts' : 'bin', 'flask');
+const root  = join(__dirname, '..');
+const python = join(root, '.venv', isWin ? 'Scripts' : 'bin', isWin ? 'python.exe' : 'python');
 
 if (!existsSync(join(root, '.venv'))) {
-  console.error('\n[ERRORE] Virtualenv non trovato. Esegui: npm run setup\n');
+  console.error('\n[ERRORE] Virtualenv non trovato. Esegui dalla root: npm run setup\n');
   process.exit(1);
 }
 
-execSync(`"${flask}" --app run run --debug --port 3000`, { stdio: 'inherit', cwd: root });
+// Crea la cartella delle sessioni Flask se non esiste
+const { mkdirSync } = require('fs');
+try { mkdirSync(join(root, '.flask_session'), { recursive: true }); } catch {}
+
+execSync(`"${python}" app.py`, { stdio: 'inherit', cwd: root });

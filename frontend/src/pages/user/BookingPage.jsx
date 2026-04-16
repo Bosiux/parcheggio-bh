@@ -5,6 +5,9 @@ import {
   CardBody,
   Button,
   Chip,
+  Input,
+  Select,
+  SelectItem,
   Spinner,
   Modal,
   ModalContent,
@@ -31,6 +34,13 @@ export default function BookingPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const nowPlusOneHour = new Date(Date.now() + 60 * 60000);
+  const [startDate, setStartDate] = useState(nowPlusOneHour.toISOString().slice(0, 10));
+  const [startHour, setStartHour] = useState(
+    `${String(nowPlusOneHour.getHours()).padStart(2, "0")}:${String(nowPlusOneHour.getMinutes()).padStart(2, "0")}`
+  );
+  const [durationHours, setDurationHours] = useState("1");
+
   useEffect(() => {
     const fetchAvailability = async () => {
       try {
@@ -50,7 +60,11 @@ export default function BookingPage() {
     setLoading(true);
     setError("");
     try {
-      const result = await bookArea(areaId);
+      const result = await bookArea(areaId, {
+        startDate,
+        startHour,
+        durationHours,
+      });
       setBooking(result);
       setSuccess(true);
       onClose();
@@ -63,8 +77,11 @@ export default function BookingPage() {
   };
 
   const areaName = area?.name || `Parcheggio ${areaId}`;
+  const isUnderMaintenance = Boolean(availability?.isUnderMaintenance ?? area?.isUnderMaintenance);
   const available = availability?.availableSpots ?? availability?.available ?? area?.availableSpots ?? area?.available ?? "—";
   const total = availability?.capacity ?? availability?.total ?? area?.capacity ?? area?.total ?? "—";
+  const hourlyRate = Number(availability?.hourlyRate ?? area?.hourlyRate ?? 0);
+  const previewTotal = isUnderMaintenance ? 0 : Number((hourlyRate * Number(durationHours || 0)).toFixed(2));
 
   if (success && booking) {
     return (
@@ -107,8 +124,10 @@ export default function BookingPage() {
                 {[
                   { label: "Area", value: areaName },
                   { label: "ID Prenotazione", value: booking.id || "—" },
-                  { label: "Data e ora", value: booking.startTime ? new Date(booking.startTime).toLocaleString("it-IT") : new Date().toLocaleString("it-IT") },
-                  { label: "Durata", value: "1 ora" },
+                  { label: "Data e ora inizio", value: booking.startTime ? new Date(booking.startTime).toLocaleString("it-IT") : "—" },
+                  { label: "Durata", value: booking.duration || "—" },
+                  { label: "Tariffa", value: `€ ${(booking.hourlyRate ?? hourlyRate).toFixed(2)}/h` },
+                  { label: "Totale", value: `€ ${(booking.totalPrice ?? previewTotal).toFixed(2)}` },
                   { label: "Scadenza", value: booking.endTime ? new Date(booking.endTime).toLocaleString("it-IT") : "—" },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--surface-05)", paddingBottom: "0.5rem" }}>
@@ -212,12 +231,27 @@ export default function BookingPage() {
                     </h2>
                   </div>
                   <Chip
-                    color={available === 0 ? "danger" : available < total * 0.3 ? "warning" : "success"}
+                    color={isUnderMaintenance ? "warning" : available === 0 ? "danger" : available < total * 0.3 ? "warning" : "success"}
                     variant="flat"
                   >
-                    {available} posti liberi
+                    {isUnderMaintenance ? "In manutenzione" : `${available} posti liberi`}
                   </Chip>
                 </div>
+
+                {isUnderMaintenance && (
+                  <div
+                    style={{
+                      background: "rgba(245,158,11,0.12)",
+                      border: "1px solid rgba(245,158,11,0.35)",
+                      borderRadius: 10,
+                      padding: "0.8rem 1rem",
+                      color: "#fcd34d",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    Area temporaneamente in manutenzione: prenotazione e costi sospesi.
+                  </div>
+                )}
 
                 <div
                   style={{
@@ -254,11 +288,49 @@ export default function BookingPage() {
                   <h3 style={{ color: "var(--text-secondary)", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
                     Dettagli prenotazione
                   </h3>
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: "0.75rem",
+                      marginBottom: "0.9rem",
+                    }}
+                  >
+                    <Input
+                      type="date"
+                      label="Data inizio"
+                      labelPlacement="outside"
+                      value={startDate}
+                      onValueChange={setStartDate}
+                      variant="bordered"
+                    />
+                    <Input
+                      type="time"
+                      label="Ora inizio"
+                      labelPlacement="outside"
+                      value={startHour}
+                      onValueChange={setStartHour}
+                      variant="bordered"
+                    />
+                    <Select
+                      label="Durata prenotazione"
+                      labelPlacement="outside"
+                      selectedKeys={new Set([durationHours])}
+                      onSelectionChange={(keys) => {
+                        const value = Array.from(keys)[0];
+                        if (value) setDurationHours(String(value));
+                      }}
+                      variant="bordered"
+                    >
+                      {[1, 2, 3, 4, 6, 8, 12, 24].map((h) => (
+                        <SelectItem key={String(h)}>{`${h} ore`}</SelectItem>
+                      ))}
+                    </Select>
+                  </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                     {[
-                      { label: "Durata", value: "1 ora (fissa)", icon: "⏱️" },
-                      { label: "Inizio", value: "Immediato", icon: "🕐" },
-                      { label: "Costo", value: "Gratuito", icon: "💳" },
+                      { label: "Tariffa", value: isUnderMaintenance ? "Sospesa" : `€ ${hourlyRate.toFixed(2)}/h`, icon: "💳" },
+                      { label: "Durata", value: `${durationHours} ore`, icon: "⏱️" },
+                      { label: "Totale stimato", value: isUnderMaintenance ? "N/A" : `€ ${previewTotal.toFixed(2)}`, icon: "🧾" },
                     ].map(({ label, value, icon }) => (
                       <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span style={{ color: "var(--text-subtle)", fontSize: "0.875rem" }}>{icon} {label}</span>
@@ -277,18 +349,22 @@ export default function BookingPage() {
           id="confirm-booking-btn"
           fullWidth
           size="lg"
-          isDisabled={loadingAvail || available === 0}
+          isDisabled={loadingAvail || isUnderMaintenance || available === 0 || !startDate || !startHour || !durationHours}
           onPress={onOpen}
           style={{
-            background: available === 0 ? "var(--surface-05)" : "linear-gradient(135deg, #bdb23c, #9b9b00)",
-            color: available === 0 ? "var(--text-subtle)" : "white",
+            background: isUnderMaintenance || available === 0 ? "var(--surface-05)" : "linear-gradient(135deg, #bdb23c, #9b9b00)",
+            color: isUnderMaintenance || available === 0 ? "var(--text-subtle)" : "white",
             fontWeight: 700,
             fontSize: "1rem",
             height: 56,
-            boxShadow: available === 0 ? "none" : "0 10px 30px rgba(189,178,60,0.35)",
+            boxShadow: isUnderMaintenance || available === 0 ? "none" : "0 10px 30px rgba(189,178,60,0.35)",
           }}
         >
-          {available === 0 ? "Parcheggio pieno — Impossibile prenotare" : "Conferma Prenotazione (1h)"}
+          {isUnderMaintenance
+            ? "Area in manutenzione — Prenotazione disattivata"
+            : available === 0
+            ? "Parcheggio pieno — Impossibile prenotare"
+            : "Conferma Prenotazione"}
         </Button>
       </div>
 
@@ -312,10 +388,10 @@ export default function BookingPage() {
               </ModalHeader>
               <ModalBody>
                 <p style={{ color: "var(--text-secondary)" }}>
-                  Stai per prenotare un posto in <strong style={{ color: "var(--text-primary)" }}>{areaName}</strong> per la durata di <strong style={{ color: "var(--text-primary)" }}>1 ora</strong>.
+                  Stai per prenotare un posto in <strong style={{ color: "var(--text-primary)" }}>{areaName}</strong> con inizio <strong style={{ color: "var(--text-primary)" }}>{new Date(`${startDate}T${startHour}:00`).toLocaleString("it-IT")}</strong> per la durata di <strong style={{ color: "var(--text-primary)" }}>{durationHours} ore</strong>.
                 </p>
                 <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
-                  ⚠️ La prenotazione inizierà subito. Assicurati di arrivare entro i tempi.
+                  Totale previsto: <strong style={{ color: "var(--text-primary)" }}>€ {previewTotal.toFixed(2)}</strong>
                 </p>
               </ModalBody>
               <ModalFooter>
