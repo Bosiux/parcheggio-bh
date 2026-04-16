@@ -1,8 +1,20 @@
 {
-  "name": "parcheggio-bh-workspace",
+  "name": "parcheggio-bh",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.0.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "node scripts/dev.js"
+    "dev": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build": "npm run build --workspace=frontend",
+    "lint": "npm run lint --workspace=frontend",
+    "setup": "npm install && npm run install:py --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
   }
 }
