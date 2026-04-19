@@ -2,6 +2,10 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { getMe } from "../api/auth.api.js";
 import { logout as apiLogout } from "../api/auth.api.js";
+import {
+  clearSessionArtifacts,
+  getSessionCookie,
+} from "../security/authSession.security.js";
 
 const AuthContext = createContext(null);
 
@@ -10,10 +14,18 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const checkSession = useCallback(async () => {
+    const sessionId = getSessionCookie();
+    if (!sessionId) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const me = await getMe();
       setUser(me);
     } catch {
+      clearSessionArtifacts();
       setUser(null);
     } finally {
       setLoading(false);

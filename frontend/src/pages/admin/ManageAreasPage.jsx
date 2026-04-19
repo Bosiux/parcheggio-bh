@@ -8,15 +8,15 @@ import {
 import { getAllAreas, updateArea } from "../../api/admin.api.js";
 import Layout from "../../components/Layout.jsx";
 
-const CARD_BASE = "!bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl rounded-2xl";
+const CARD_BASE = "bg-white/80 dark:!bg-white/[0.04] border border-black/5 dark:border-white/[0.08] backdrop-blur-xl rounded-2xl";
 const toInt       = (v) => Number.parseInt(String(v ?? "").trim(), 10);
 const normalizeId = (v) => String(v ?? "").trim().toUpperCase();
 const normalizeName = (v) => String(v ?? "").trim().toLowerCase();
 
 const inputCls = {
-  inputWrapper: "border-white/10 bg-white/[0.05] hover:!border-yellow-500/50 focus-within:!border-yellow-500",
-  input: "!text-slate-100 placeholder:!text-slate-500",
-  label: "!text-slate-400",
+  inputWrapper: "border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:!border-yellow-500/50 focus-within:!border-yellow-500",
+  input: "!text-slate-900 dark:!text-slate-100 placeholder:!text-slate-500",
+  label: "!text-slate-700 dark:!text-slate-400",
 };
 
 export default function ManageAreasPage() {
@@ -99,21 +99,21 @@ export default function ManageAreasPage() {
   return (
     <Layout>
       <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "#e2e8f0", margin: 0 }}>Gestisci Aree</h1>
-        <p style={{ color: "#64748b", marginTop: "0.5rem" }}>Visualizza e modifica le aree parcheggio.</p>
+        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Gestisci Aree</h1>
+        <p style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}>Visualizza e modifica le aree parcheggio.</p>
       </div>
 
       {/* Summary */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
         {[
-          { label: "Aree totali",       value: areas.length,               color: "#e2e8f0" },
-          { label: "Capienza totale",   value: totalCapacity,              color: "#e2e8f0" },
+          { label: "Aree totali",       value: areas.length,               color: "var(--text-primary)" },
+          { label: "Capienza totale",   value: totalCapacity,              color: "var(--text-primary)" },
           { label: "Posti disponibili", value: totalAvailable,             color: "#22c55e" },
           { label: "Tariffa media",     value: `€ ${avgRate.toFixed(2)}/h`, color: "#bdb23c" },
         ].map(({ label, value, color }) => (
           <Card key={label} shadow="none" classNames={{ base: CARD_BASE }}>
             <CardBody style={{ padding: "1rem" }}>
-              <p style={{ color: "#64748b", fontSize: "0.75rem", margin: 0 }}>{label}</p>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", margin: 0 }}>{label}</p>
               <p style={{ color, fontWeight: 800, fontSize: "1.5rem", margin: 0 }}>{value}</p>
             </CardBody>
           </Card>
@@ -131,7 +131,7 @@ export default function ManageAreasPage() {
         />
         <Button
           variant="flat" onPress={loadAreas}
-          style={{ color: "#94a3b8", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", fontWeight: 600 }}
+          style={{ color: "var(--text-secondary)", background: "var(--surface-04)", border: "1px solid var(--border-default)", fontWeight: 600 }}
         >
           Aggiorna lista
         </Button>
@@ -144,7 +144,7 @@ export default function ManageAreasPage() {
           <Spinner size="lg" color="warning" label="Caricamento aree..." />
         </div>
       ) : filteredAreas.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "3rem", color: "#475569" }}>Nessuna area trovata.</div>
+        <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-subtle)" }}>Nessuna area trovata.</div>
       ) : (
         <>
           {/* Mobile cards */}
@@ -158,7 +158,7 @@ export default function ManageAreasPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "flex-start", marginBottom: "0.5rem" }}>
                       <div>
                         <div style={{ color: "#bdb23c", fontWeight: 800, fontSize: "0.9rem" }}>{area.id}</div>
-                        <div style={{ color: "#e2e8f0", fontWeight: 700 }}>{area.name || `Parcheggio ${area.id}`}</div>
+                        <div style={{ color: "var(--text-primary)", fontWeight: 700 }}>{area.name || `Parcheggio ${area.id}`}</div>
                       </div>
                       <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
                         <Chip size="sm" variant="flat" color={pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success"}>{pct}%</Chip>
@@ -167,12 +167,12 @@ export default function ManageAreasPage() {
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "0.75rem" }}>
                       {[
-                        { label: "Capienza",    value: area.capacity,                                           color: "#e2e8f0" },
+                        { label: "Capienza",    value: area.capacity,                                           color: "var(--text-primary)" },
                         { label: "Disponibili", value: area.availableSpots,                                     color: "#22c55e" },
                         { label: "Tariffa",     value: `€ ${Number(area.hourlyRate || 0).toFixed(2)}/h`,         color: "#bdb23c" },
                       ].map(({ label, value, color }) => (
-                        <div key={label} style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "0.55rem" }}>
-                          <div style={{ color: "#475569", fontSize: "0.7rem" }}>{label}</div>
+                        <div key={label} style={{ background: "var(--surface-04)", borderRadius: 10, padding: "0.55rem" }}>
+                          <div style={{ color: "var(--text-subtle)", fontSize: "0.7rem" }}>{label}</div>
                           <div style={{ color, fontWeight: 700 }}>{value}</div>
                         </div>
                       ))}
@@ -185,14 +185,14 @@ export default function ManageAreasPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, overflow: "hidden" }}>
+          <div className="hidden md:block" style={{ background: "var(--surface-04)", border: "1px solid var(--border-soft)", borderRadius: 14, overflow: "hidden" }}>
             <Table
               aria-label="Tabella gestione aree"
               removeWrapper
               classNames={{
-                th: "bg-transparent text-slate-500 border-b border-white/[0.07] text-xs uppercase tracking-wider",
-                td: "border-b border-white/[0.07] text-slate-200 py-3",
-                tr: "hover:bg-white/[0.02] transition-colors",
+                th: "bg-transparent text-slate-500 border-b border-black/5 dark:border-white/5 text-xs uppercase tracking-wider",
+                td: "border-b border-black/5 dark:border-white/5 text-slate-800 dark:text-slate-200 py-3",
+                tr: "hover:bg-black/5 dark:hover:bg-white/[0.02] transition-colors",
               }}
             >
               <TableHeader>
@@ -237,12 +237,12 @@ export default function ManageAreasPage() {
       {/* Edit Modal */}
       <Modal
         isOpen={isOpen} onOpenChange={onOpenChange} placement="center" backdrop="blur"
-        classNames={{ backdrop: "bg-black/60", base: "!bg-[#111827] border border-white/10 rounded-2xl" }}
+        classNames={{ backdrop: "bg-black/60", base: "bg-white dark:!bg-[#111827] border border-black/10 dark:border-white/10 rounded-2xl" }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader style={{ color: "#e2e8f0", fontWeight: 700 }}>Modifica area {editingArea?.id}</ModalHeader>
+              <ModalHeader style={{ color: "var(--text-primary)", fontWeight: 700 }}>Modifica area {editingArea?.id}</ModalHeader>
               <ModalBody style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {error && <div className="alert-error">{error}</div>}
                 <Input label="ID Area"           labelPlacement="outside" value={form.id}         onValueChange={(v) => setForm((p) => ({ ...p, id: v }))}         variant="bordered" classNames={inputCls} />
@@ -254,7 +254,7 @@ export default function ManageAreasPage() {
                 </Switch>
               </ModalBody>
               <ModalFooter>
-                <Button variant="flat" onPress={onClose} style={{ color: "#64748b" }}>Annulla</Button>
+                <Button variant="flat" onPress={onClose} style={{ color: "var(--text-muted)" }}>Annulla</Button>
                 <Button
                   isLoading={saving} onPress={() => handleSave(onClose)}
                   className="font-bold text-white"

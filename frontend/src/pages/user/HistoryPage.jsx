@@ -88,8 +88,8 @@ export default function HistoryPage() {
   };
 
   const cardRowStyle = {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "var(--surface-04)",
+    border: "1px solid var(--border-default)",
     borderRadius: 12,
     padding: "0.9rem",
   };
@@ -97,8 +97,8 @@ export default function HistoryPage() {
   return (
     <Layout>
       <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "#e2e8f0", margin: 0 }}>Storico Prenotazioni</h1>
-        <p style={{ color: "#64748b", marginTop: "0.5rem" }}>Visualizza tutte le tue prenotazioni passate e in corso.</p>
+        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Storico Prenotazioni</h1>
+        <p style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}>Visualizza tutte le tue prenotazioni passate e in corso.</p>
       </div>
 
       {/* Stat mini cards */}
@@ -110,9 +110,9 @@ export default function HistoryPage() {
             { label: "Completate", value: bookings.filter((b) => b.status === "completed").length,  color: "#9b9b00" },
             { label: "Scadute",    value: bookings.filter((b) => b.status === "expired").length,    color: "#f59e0b" },
           ].map(({ label, value, color }) => (
-            <div key={label} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "1rem 1.25rem", textAlign: "center" }}>
+            <div key={label} style={{ background: "var(--surface-04)", border: "1px solid var(--border-default)", borderRadius: 12, padding: "1rem 1.25rem", textAlign: "center" }}>
               <div style={{ color, fontWeight: 800, fontSize: "1.75rem" }}>{value}</div>
-              <div style={{ color: "#475569", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "0.25rem" }}>{label}</div>
+              <div style={{ color: "var(--text-subtle)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", marginTop: "0.25rem" }}>{label}</div>
             </div>
           ))}
         </div>
@@ -136,9 +136,9 @@ export default function HistoryPage() {
       )}
 
       {!loading && !error && bookings.length === 0 && (
-        <div style={{ textAlign: "center", padding: "4rem 2rem", color: "#475569" }}>
+        <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--text-subtle)" }}>
           <div style={{ fontSize: 64, marginBottom: "1rem" }}>📋</div>
-          <h3 style={{ color: "#64748b" }}>Nessuna prenotazione</h3>
+          <h3 style={{ color: "var(--text-muted)" }}>Nessuna prenotazione</h3>
           <p>Non hai ancora effettuato prenotazioni.</p>
         </div>
       )}
@@ -153,8 +153,8 @@ export default function HistoryPage() {
                   <span style={{ color: "#bdb23c", fontFamily: "monospace", fontSize: "0.8rem", fontWeight: 700 }}>#{String(b.id).slice(-6)}</span>
                   <StatusChip status={b.status} />
                 </div>
-                <div style={{ color: "#e2e8f0", fontWeight: 700 }}>{b.areaName || b.area?.name || `Area ${b.areaId}`}</div>
-                <div style={{ color: "#475569", fontSize: "0.78rem", marginBottom: "0.65rem" }}>
+                <div style={{ color: "var(--text-primary)", fontWeight: 700 }}>{b.areaName || b.area?.name || `Area ${b.areaId}`}</div>
+                <div style={{ color: "var(--text-subtle)", fontSize: "0.78rem", marginBottom: "0.65rem" }}>
                   ID {b.areaId} · {`${b.durationHours ?? 1}h`} · € {computeTotal(b).toFixed(2)}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: b.status === "active" ? "0.75rem" : 0 }}>
@@ -162,9 +162,9 @@ export default function HistoryPage() {
                     { label: "Inizio", time: b.startTime || b.createdAt },
                     { label: "Fine",   time: b.endTime },
                   ].map(({ label, time }) => (
-                    <div key={label} style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "0.55rem" }}>
-                      <div style={{ color: "#475569", fontSize: "0.7rem" }}>{label}</div>
-                      <div style={{ color: "#e2e8f0", fontWeight: 600, fontSize: "0.85rem" }}>{fmtDate(time)} {fmtTime(time)}</div>
+                    <div key={label} style={{ background: "var(--surface-02)", borderRadius: 10, padding: "0.55rem" }}>
+                      <div style={{ color: "var(--text-subtle)", fontSize: "0.7rem" }}>{label}</div>
+                      <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.85rem" }}>{fmtDate(time)} {fmtTime(time)}</div>
                     </div>
                   ))}
                 </div>
@@ -179,14 +179,14 @@ export default function HistoryPage() {
           </div>
 
           {/* Desktop */}
-          <div className="hidden md:block" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, overflow: "hidden" }}>
+          <div className="hidden md:block" style={{ background: "var(--surface-04)", border: "1px solid var(--border-soft)", borderRadius: 14, overflow: "hidden" }}>
             <Table
               aria-label="Storico prenotazioni"
               removeWrapper
               classNames={{
-                th: "bg-transparent text-slate-500 border-b border-white/[0.07] text-xs uppercase tracking-wider",
-                td: "border-b border-white/[0.07] text-slate-200 py-3",
-                tr: "hover:bg-white/[0.02] transition-colors",
+                th: "bg-transparent text-slate-500 border-b border-black/5 dark:border-white/[0.07] text-xs uppercase tracking-wider",
+                td: "border-b border-black/5 dark:border-white/[0.07] text-slate-800 dark:text-slate-200 py-3",
+                tr: "hover:bg-black/5 dark:hover:bg-white/[0.02] transition-colors",
               }}
             >
               <TableHeader columns={columns}>
@@ -198,7 +198,7 @@ export default function HistoryPage() {
                     <TableCell><span style={{ color: "#bdb23c", fontFamily: "monospace", fontSize: "0.8rem" }}>#{String(b.id).slice(-6)}</span></TableCell>
                     <TableCell>
                       <div style={{ fontWeight: 600 }}>{b.areaName || b.area?.name || `Area ${b.areaId}`}</div>
-                      <div style={{ color: "#475569", fontSize: "0.75rem" }}>ID {b.areaId}</div>
+                      <div style={{ color: "var(--text-subtle)", fontSize: "0.75rem" }}>ID {b.areaId}</div>
                     </TableCell>
                     <TableCell>{fmtDate(b.startTime || b.createdAt)}</TableCell>
                     <TableCell>{fmtTime(b.startTime || b.createdAt)}</TableCell>
@@ -223,7 +223,7 @@ export default function HistoryPage() {
       )}
 
       {!loading && !error && bookings.length > 0 && filtered.length === 0 && (
-        <div style={{ textAlign: "center", padding: "3rem", color: "#475569" }}>
+        <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-subtle)" }}>
           Nessuna prenotazione con filtro "{filterButtons.find((f) => f.key === filter)?.label}".
         </div>
       )}

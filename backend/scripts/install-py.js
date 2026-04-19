@@ -1,10 +1,47 @@
 const { execSync } = require('child_process');
 const { join } = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
 
 const isWin  = process.platform === 'win32';
 const python = isWin ? 'python' : 'python3';
 const root   = join(__dirname, '..');
 const pip    = join(root, '.venv', isWin ? 'Scripts' : 'bin', 'pip');
+
+
+const backendEnvPath  = join(root, '.env');
+const backendExample  = join(root, '.env.example');
+
+if (!fs.existsSync(backendEnvPath)) {
+  if (!fs.existsSync(backendExample)) {
+    console.error('[setup] ✗ backend/.env.example non trovato, impossibile generare .env');
+    process.exit(1);
+  }
+  const secretKey = crypto.randomBytes(32).toString('hex');
+  const content = fs.readFileSync(backendExample, 'utf8')
+    .replace(/^SECRET_KEY=.*/m, `SECRET_KEY=${secretKey}`);
+  fs.writeFileSync(backendEnvPath, content, 'utf8');
+  console.log('[setup] ✓ backend/.env creato con SECRET_KEY generata automaticamente.');
+} else {
+  console.log('[setup] backend/.env già esistente, nessuna modifica.');
+}
+
+
+const frontendRoot    = join(root, '..', 'frontend');
+const frontendEnvPath = join(frontendRoot, '.env');
+const frontendExample = join(frontendRoot, '.env.example');
+
+if (!fs.existsSync(frontendEnvPath)) {
+  if (fs.existsSync(frontendExample)) {
+    fs.copyFileSync(frontendExample, frontendEnvPath);
+    console.log('[setup] ✓ frontend/.env creato da .env.example.');
+  } else {
+    console.warn('[setup] ⚠ frontend/.env.example non trovato, .env frontend non creato.');
+  }
+} else {
+  console.log('[setup] frontend/.env già esistente, nessuna modifica.');
+}
+
 
 console.log('[setup] Creazione virtualenv Python...');
 execSync(`${python} -m venv .venv`, { stdio: 'inherit', cwd: root });
