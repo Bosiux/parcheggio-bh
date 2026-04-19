@@ -13,6 +13,7 @@
 ## 3. Avvio completo
 Dalla root:
 - `npm install`
+- `npm run setup`
 - `npm run dev` (avvia frontend + backend in parallelo)
 
 ### Avvio SOLO backend
