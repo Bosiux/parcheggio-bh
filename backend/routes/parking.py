@@ -1,20 +1,15 @@
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import psycopg2
 from flask import Blueprint, jsonify, request
 from psycopg2.extras import RealDictCursor
 
+from db import HAS_BOOKINGS_UPDATED_AT, HAS_COORDS, get_db_connection
+
 
 parking_bp = Blueprint("parking", __name__, url_prefix="/parking")
-
-
-def get_db_connection():
-    database_url = os.getenv("DATABASE_URL")
-    if not database_url:
-        raise RuntimeError("DATABASE_URL non configurato")
-    return psycopg2.connect(database_url)
 
 
 def require_user(cursor):
@@ -39,6 +34,12 @@ def require_user(cursor):
     return user_row, None
 
 
+def build_map_point(row):
+    if HAS_COORDS and row.get("lat") is not None and row.get("lng") is not None:
+        return {"lat": float(row["lat"]), "lng": float(row["lng"])}
+    return None
+
+
 def build_booking_payload(row):
     duration_hours = int((row["end_time"] - row["start_time"]).total_seconds() // 3600)
     return {
@@ -48,7 +49,6 @@ def build_booking_payload(row):
         "startTime": row["start_time"].isoformat(),
         "endTime": row["end_time"].isoformat(),
         "durationHours": duration_hours,
-        "duration": f"{duration_hours}h",
         "hourlyRate": float(row["hourly_rate"]),
         "totalPrice": float(row["total_price"]),
         "status": row["status"],
@@ -58,16 +58,19 @@ def build_booking_payload(row):
 @parking_bp.get("/areas")
 def get_areas():
     try:
+        coord_select = ", a.lat, a.lng" if HAS_COORDS else ""
+        coord_group = ", a.lat, a.lng" if HAS_COORDS else ""
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute(
-                    """
+                    f"""
                     SELECT
                         a.id,
                         a.name,
                         a.capacity,
                         a.hourly_rate,
-                        a.is_under_maintenance,
+                        a.is_under_maintenance
+                        {coord_select},
                         GREATEST(
                             a.capacity - COUNT(b.id) FILTER (
                                 WHERE b.status = 'active' AND b.end_time > NOW()
@@ -76,7 +79,7 @@ def get_areas():
                         ) AS available_spots
                     FROM parking_areas a
                     LEFT JOIN bookings b ON b.area_id = a.id
-                    GROUP BY a.id
+                    GROUP BY a.id, a.name, a.capacity, a.hourly_rate, a.is_under_maintenance{coord_group}
                     ORDER BY a.id
                     """
                 )
@@ -92,6 +95,7 @@ def get_areas():
                         "hourlyRate": float(row["hourly_rate"]),
                         "availableSpots": 0 if row["is_under_maintenance"] else int(row["available_spots"]),
                         "isUnderMaintenance": bool(row["is_under_maintenance"]),
+                        "mapPoint": build_map_point(row),
                     }
                     for row in rows
                 ]
@@ -105,16 +109,19 @@ def get_areas():
 @parking_bp.get("/areas/<string:area_id>/availability")
 def get_area_availability(area_id):
     try:
+        coord_select = ", a.lat, a.lng" if HAS_COORDS else ""
+        coord_group = ", a.lat, a.lng" if HAS_COORDS else ""
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
                 cursor.execute(
-                    """
+                    f"""
                     SELECT
                         a.id,
                         a.name,
                         a.capacity,
                         a.hourly_rate,
-                        a.is_under_maintenance,
+                        a.is_under_maintenance
+                        {coord_select},
                         GREATEST(
                             a.capacity - COUNT(b.id) FILTER (
                                 WHERE b.status = 'active' AND b.end_time > NOW()
@@ -124,7 +131,7 @@ def get_area_availability(area_id):
                     FROM parking_areas a
                     LEFT JOIN bookings b ON b.area_id = a.id
                     WHERE a.id = %s
-                    GROUP BY a.id
+                    GROUP BY a.id, a.name, a.capacity, a.hourly_rate, a.is_under_maintenance{coord_group}
                     """,
                     (area_id.upper(),),
                 )
@@ -142,6 +149,7 @@ def get_area_availability(area_id):
                     "hourlyRate": float(row["hourly_rate"]),
                     "availableSpots": 0 if row["is_under_maintenance"] else int(row["available_spots"]),
                     "isUnderMaintenance": bool(row["is_under_maintenance"]),
+                    "mapPoint": build_map_point(row),
                 }
             ),
             200,
@@ -162,9 +170,9 @@ def book_area(area_id):
 
     try:
         if start_date and start_hour:
-            start_time = datetime.fromisoformat(f"{start_date}T{start_hour}:00")
+            start_time = datetime.fromisoformat(f"{start_date}T{start_hour}:00").replace(tzinfo=timezone.utc)
         else:
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
     except ValueError:
         return jsonify({"message": "Data o ora non valida."}), 400
 
@@ -248,7 +256,6 @@ def book_area(area_id):
                     "startTime": booking_row["start_time"].isoformat(),
                     "endTime": booking_row["end_time"].isoformat(),
                     "durationHours": booking_row["duration_hours"],
-                    "duration": f"{booking_row['duration_hours']}h",
                     "hourlyRate": float(booking_row["hourly_rate"]),
                     "totalPrice": float(booking_row["total_price"]),
                     "status": booking_row["status"],
@@ -269,13 +276,8 @@ def get_my_bookings():
                 if auth_error:
                     return auth_error
 
-                cursor.execute(
-                    """
-                    UPDATE bookings
-                    SET status = 'expired', updated_at = NOW()
-                    WHERE status = 'active' AND end_time <= NOW()
-                    """
-                )
+                expire_set = "status = 'expired', updated_at = NOW()" if HAS_BOOKINGS_UPDATED_AT else "status = 'expired'"
+                cursor.execute(f"UPDATE bookings SET {expire_set} WHERE status = 'active' AND end_time <= NOW()")
 
                 cursor.execute(
                     """
@@ -301,3 +303,33 @@ def get_my_bookings():
         return jsonify([build_booking_payload(row) for row in rows]), 200
     except Exception as exc:
         return jsonify({"message": "Errore caricamento prenotazioni.", "error": str(exc)}), 500
+
+
+@parking_bp.post("/bookings/<string:booking_id>/cancel")
+def cancel_booking(booking_id):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                user, auth_error = require_user(cursor)
+                if auth_error:
+                    return auth_error
+
+                cursor.execute(
+                    "SELECT id, user_id, status FROM bookings WHERE id = %s",
+                    (booking_id,),
+                )
+                booking = cursor.fetchone()
+                if not booking:
+                    return jsonify({"message": "Prenotazione non trovata."}), 404
+                if booking["user_id"] != user["id"]:
+                    return jsonify({"message": "Non autorizzato."}), 403
+                if booking["status"] != "active":
+                    return jsonify({"message": "Solo le prenotazioni attive possono essere cancellate."}), 409
+
+                cancel_set = "status = 'cancelled', updated_at = NOW()" if HAS_BOOKINGS_UPDATED_AT else "status = 'cancelled'"
+                cursor.execute(f"UPDATE bookings SET {cancel_set} WHERE id = %s", (booking_id,))
+            conn.commit()
+
+        return jsonify({"message": "Prenotazione cancellata."}), 200
+    except Exception as exc:
+        return jsonify({"message": "Errore cancellazione prenotazione.", "error": str(exc)}), 500

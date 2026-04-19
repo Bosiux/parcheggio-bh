@@ -1,346 +1,197 @@
+// src/pages/admin/ManageAreasPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import {
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Card,
-  CardBody,
-  Input,
-  Button,
-  Chip,
-  Switch,
-  Spinner,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
+  Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
+  Card, CardBody, Input, Button, Chip, Switch, Spinner,
+  Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure,
 } from "@heroui/react";
 import { getAllAreas, updateArea } from "../../api/admin.api.js";
 import Layout from "../../components/Layout.jsx";
 
-const toInt = (value) => Number.parseInt(String(value ?? "").trim(), 10);
-const normalizeId = (value) => String(value ?? "").trim().toUpperCase();
-const normalizeName = (value) => String(value ?? "").trim().toLowerCase();
+const CARD_BASE = "!bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl rounded-2xl";
+const toInt       = (v) => Number.parseInt(String(v ?? "").trim(), 10);
+const normalizeId = (v) => String(v ?? "").trim().toUpperCase();
+const normalizeName = (v) => String(v ?? "").trim().toLowerCase();
+
+const inputCls = {
+  inputWrapper: "border-white/10 bg-white/[0.05] hover:!border-yellow-500/50 focus-within:!border-yellow-500",
+  input: "!text-slate-100 placeholder:!text-slate-500",
+  label: "!text-slate-400",
+};
 
 export default function ManageAreasPage() {
-  const [areas, setAreas] = useState([]);
+  const [areas, setAreas]     = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [query, setQuery] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [error, setError]     = useState("");
+  const [query, setQuery]     = useState("");
+  const [saving, setSaving]   = useState(false);
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [editingArea, setEditingArea] = useState(null);
-  const [form, setForm] = useState({ id: "", name: "", capacity: "", availableSpots: "", hourlyRate: "", isUnderMaintenance: false });
+  const [editingArea, setEditingArea]   = useState(null);
+  const [form, setForm] = useState({ id: "", name: "", capacity: "", hourlyRate: "", isUnderMaintenance: false });
 
   const loadAreas = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const data = await getAllAreas();
-      setAreas(data);
-    } catch (err) {
-      setError(err.message || "Errore nel caricamento delle aree.");
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true); setError("");
+    try { setAreas(await getAllAreas()); }
+    catch (err) { setError(err.message || "Errore nel caricamento delle aree."); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    loadAreas();
-  }, []);
+  useEffect(() => { loadAreas(); }, []);
 
   const filteredAreas = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return areas;
-    return areas.filter((area) => {
-      const idMatch = String(area.id ?? "").toLowerCase().includes(q);
-      const nameMatch = String(area.name ?? "").toLowerCase().includes(q);
-      return idMatch || nameMatch;
-    });
+    return areas.filter((a) =>
+      String(a.id ?? "").toLowerCase().includes(q) || String(a.name ?? "").toLowerCase().includes(q)
+    );
   }, [areas, query]);
 
   const openEditModal = (area) => {
     setEditingArea(area);
-    setForm({
-      id: String(area.id ?? ""),
-      name: String(area.name ?? ""),
-      capacity: String(area.capacity ?? ""),
-      availableSpots: String(area.availableSpots ?? ""),
-      hourlyRate: String(area.hourlyRate ?? "0"),
-      isUnderMaintenance: Boolean(area.isUnderMaintenance),
-    });
-    setError("");
-    onOpen();
+    setForm({ id: String(area.id ?? ""), name: String(area.name ?? ""), capacity: String(area.capacity ?? ""), hourlyRate: String(area.hourlyRate ?? "0"), isUnderMaintenance: Boolean(area.isUnderMaintenance) });
+    setError(""); onOpen();
   };
 
   const validateForm = () => {
     const id = normalizeId(form.id);
-    const name = String(form.name ?? "").trim();
     const capacity = toInt(form.capacity);
-    const availableSpots = toInt(form.availableSpots);
     const hourlyRate = Number(String(form.hourlyRate ?? "").trim());
-
     if (!id) return "L'ID area è obbligatorio.";
-    if (!/^[A-Z0-9-]{2,20}$/.test(id)) {
-      return "ID non valido: usa solo lettere, numeri o trattino (2-20 caratteri).";
-    }
-    if (!Number.isInteger(capacity) || capacity < 1) {
-      return "La capienza deve essere un numero intero >= 1.";
-    }
-    if (!Number.isInteger(availableSpots) || availableSpots < 0) {
-      return "I posti disponibili devono essere un numero intero >= 0.";
-    }
-    if (availableSpots > capacity) {
-      return "I posti disponibili non possono superare la capienza.";
-    }
-    if (!Number.isFinite(hourlyRate) || hourlyRate < 0) {
-      return "La tariffa oraria deve essere un numero >= 0.";
-    }
-
-    const occupiedBefore = Math.max(
-      0,
-      Number(editingArea?.capacity ?? 0) - Number(editingArea?.availableSpots ?? 0)
-    );
-    if (capacity < occupiedBefore) {
-      return `Capienza troppo bassa: attualmente ci sono ${occupiedBefore} posti occupati.`;
-    }
-
-    const duplicateId = areas.some(
-      (area) => normalizeId(area.id) === id && normalizeId(area.id) !== normalizeId(editingArea?.id)
-    );
-    if (duplicateId) return `ID area già esistente: ${id}.`;
-
-    if (name) {
-      const duplicateName = areas.some(
-        (area) =>
-          normalizeName(area.name) === normalizeName(name) &&
-          normalizeId(area.id) !== normalizeId(editingArea?.id)
-      );
-      if (duplicateName) return "Nome area già esistente.";
-    }
-
+    if (!/^[A-Z0-9-]{2,20}$/.test(id)) return "ID non valido: usa solo lettere, numeri o trattino (2-20 caratteri).";
+    if (!Number.isInteger(capacity) || capacity < 1) return "La capienza deve essere un numero intero >= 1.";
+    if (!Number.isFinite(hourlyRate) || hourlyRate < 0) return "La tariffa oraria deve essere un numero >= 0.";
+    if (areas.some((a) => normalizeId(a.id) === id && normalizeId(a.id) !== normalizeId(editingArea?.id))) return `ID area già esistente: ${id}.`;
+    const name = String(form.name ?? "").trim();
+    if (name && areas.some((a) => normalizeName(a.name) === normalizeName(name) && normalizeId(a.id) !== normalizeId(editingArea?.id))) return "Nome area già esistente.";
     return null;
   };
 
   const handleSave = async (onClose) => {
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    setSaving(true);
-    setError("");
+    const ve = validateForm();
+    if (ve) { setError(ve); return; }
+    setSaving(true); setError("");
     try {
-      const payload = {
-        id: normalizeId(form.id),
-        name: String(form.name ?? "").trim() || undefined,
-        capacity: toInt(form.capacity),
-        availableSpots: toInt(form.availableSpots),
-        hourlyRate: Number(Number(form.hourlyRate).toFixed(2)),
+      const updated = await updateArea(editingArea.id, {
+        id: normalizeId(form.id), name: String(form.name ?? "").trim() || undefined,
+        capacity: toInt(form.capacity), hourlyRate: Number(Number(form.hourlyRate).toFixed(2)),
         isUnderMaintenance: Boolean(form.isUnderMaintenance),
-      };
-      const updated = await updateArea(editingArea.id, payload);
-
-      setAreas((prev) =>
-        prev.map((area) =>
-          normalizeId(area.id) === normalizeId(editingArea.id) ? updated : area
-        )
-      );
-
-      onClose();
-      setEditingArea(null);
-    } catch (err) {
-      setError(err.message || "Errore durante il salvataggio dell'area.");
-    } finally {
-      setSaving(false);
-    }
+      });
+      setAreas((prev) => prev.map((a) => normalizeId(a.id) === normalizeId(editingArea.id) ? updated : a));
+      onClose(); setEditingArea(null);
+    } catch (err) { setError(err.message || "Errore durante il salvataggio."); }
+    finally { setSaving(false); }
   };
 
-  const totalCapacity = areas.reduce((sum, area) => sum + Number(area.capacity || 0), 0);
-  const totalAvailable = areas.reduce((sum, area) => sum + Number(area.availableSpots || 0), 0);
-  const avgRate =
-    areas.length > 0
-      ? areas.reduce((sum, area) => sum + Number(area.hourlyRate || 0), 0) / areas.length
-      : 0;
+  const totalCapacity  = areas.reduce((s, a) => s + Number(a.capacity || 0), 0);
+  const totalAvailable = areas.reduce((s, a) => s + Number(a.availableSpots || 0), 0);
+  const avgRate        = areas.length > 0 ? areas.reduce((s, a) => s + Number(a.hourlyRate || 0), 0) / areas.length : 0;
+
+  const editBtn = (area) => (
+    <Button
+      size="sm" variant="flat" onPress={() => openEditModal(area)}
+      style={{ color: "#bdb23c", background: "rgba(189,178,60,0.14)", border: "1px solid rgba(189,178,60,0.30)", fontWeight: 700 }}
+    >
+      Modifica
+    </Button>
+  );
 
   return (
     <Layout>
       <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
-          Gestisci Aree
-        </h1>
-        <p style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}>
-          Visualizza e modifica le aree parcheggio con controlli su ID, capienza e disponibilita.
-        </p>
+        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "#e2e8f0", margin: 0 }}>Gestisci Aree</h1>
+        <p style={{ color: "#64748b", marginTop: "0.5rem" }}>Visualizza e modifica le aree parcheggio.</p>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <Card style={{ background: "var(--surface-04)", border: "1px solid var(--border-soft)" }}>
-          <CardBody style={{ padding: "1rem" }}>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", margin: 0 }}>Aree totali</p>
-            <p style={{ color: "var(--text-primary)", fontWeight: 800, fontSize: "1.5rem", margin: 0 }}>{areas.length}</p>
-          </CardBody>
-        </Card>
-        <Card style={{ background: "var(--surface-04)", border: "1px solid var(--border-soft)" }}>
-          <CardBody style={{ padding: "1rem" }}>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", margin: 0 }}>Capienza totale</p>
-            <p style={{ color: "var(--text-primary)", fontWeight: 800, fontSize: "1.5rem", margin: 0 }}>{totalCapacity}</p>
-          </CardBody>
-        </Card>
-        <Card style={{ background: "var(--surface-04)", border: "1px solid var(--border-soft)" }}>
-          <CardBody style={{ padding: "1rem" }}>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", margin: 0 }}>Posti disponibili</p>
-            <p style={{ color: "#22c55e", fontWeight: 800, fontSize: "1.5rem", margin: 0 }}>{totalAvailable}</p>
-          </CardBody>
-        </Card>
-        <Card style={{ background: "var(--surface-04)", border: "1px solid var(--border-soft)" }}>
-          <CardBody style={{ padding: "1rem" }}>
-            <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", margin: 0 }}>Tariffa media</p>
-            <p style={{ color: "#bdb23c", fontWeight: 800, fontSize: "1.5rem", margin: 0 }}>€ {avgRate.toFixed(2)}/h</p>
-          </CardBody>
-        </Card>
+      {/* Summary */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+        {[
+          { label: "Aree totali",       value: areas.length,               color: "#e2e8f0" },
+          { label: "Capienza totale",   value: totalCapacity,              color: "#e2e8f0" },
+          { label: "Posti disponibili", value: totalAvailable,             color: "#22c55e" },
+          { label: "Tariffa media",     value: `€ ${avgRate.toFixed(2)}/h`, color: "#bdb23c" },
+        ].map(({ label, value, color }) => (
+          <Card key={label} shadow="none" classNames={{ base: CARD_BASE }}>
+            <CardBody style={{ padding: "1rem" }}>
+              <p style={{ color: "#64748b", fontSize: "0.75rem", margin: 0 }}>{label}</p>
+              <p style={{ color, fontWeight: 800, fontSize: "1.5rem", margin: 0 }}>{value}</p>
+            </CardBody>
+          </Card>
+        ))}
       </div>
 
+      {/* Toolbar */}
       <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap" }}>
         <Input
           placeholder="Cerca per ID o nome area..."
           value={query}
           onValueChange={setQuery}
           variant="bordered"
-          classNames={{
-            base: "max-w-md",
-            inputWrapper: "!bg-[var(--surface-04)] !border-[var(--border-default)] data-[hover=true]:!border-[#bdb23c]/60 data-[focus=true]:!border-[#bdb23c]",
-            input: "!text-[var(--text-primary)] placeholder:!text-[var(--text-muted)]",
-          }}
+          classNames={{ ...inputCls, base: "max-w-md" }}
         />
-
         <Button
-          variant="flat"
-          onPress={loadAreas}
-          style={{
-            color: "var(--text-secondary)",
-            background: "var(--surface-04)",
-            border: "1px solid var(--border-default)",
-            fontWeight: 600,
-          }}
+          variant="flat" onPress={loadAreas}
+          style={{ color: "#94a3b8", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", fontWeight: 600 }}
         >
           Aggiorna lista
         </Button>
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: "rgba(239,68,68,0.1)",
-            border: "1px solid rgba(239,68,68,0.3)",
-            borderRadius: 12,
-            padding: "1rem 1.25rem",
-            color: "#fca5a5",
-            marginBottom: "1rem",
-          }}
-        >
-          {error}
-        </div>
-      )}
+      {error && <div className="alert-error" style={{ marginBottom: "1rem" }}>{error}</div>}
 
       {loading ? (
         <div style={{ display: "flex", justifyContent: "center", padding: "4rem" }}>
-          <Spinner size="lg" color="primary" label="Caricamento aree..." />
+          <Spinner size="lg" color="warning" label="Caricamento aree..." />
         </div>
       ) : filteredAreas.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-subtle)" }}>
-          Nessuna area trovata.
-        </div>
+        <div style={{ textAlign: "center", padding: "3rem", color: "#475569" }}>Nessuna area trovata.</div>
       ) : (
         <>
+          {/* Mobile cards */}
           <div className="md:hidden" style={{ display: "grid", gap: "0.75rem" }}>
             {filteredAreas.map((area) => {
-              const occupied = Math.max(0, Number(area.capacity || 0) - Number(area.availableSpots || 0));
-              const pct = Number(area.capacity) > 0 ? Math.round((occupied / Number(area.capacity)) * 100) : 0;
+              const occ = Math.max(0, Number(area.capacity || 0) - Number(area.availableSpots || 0));
+              const pct = Number(area.capacity) > 0 ? Math.round((occ / Number(area.capacity)) * 100) : 0;
               return (
-                <Card key={area.id} style={{ background: "var(--surface-04)", border: "1px solid var(--border-soft)" }}>
+                <Card key={area.id} shadow="none" classNames={{ base: CARD_BASE }}>
                   <CardBody style={{ padding: "0.9rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "flex-start", marginBottom: "0.5rem" }}>
                       <div>
                         <div style={{ color: "#bdb23c", fontWeight: 800, fontSize: "0.9rem" }}>{area.id}</div>
-                        <div style={{ color: "var(--text-primary)", fontWeight: 700 }}>
-                          {area.name || `Parcheggio ${area.id}`}
-                        </div>
+                        <div style={{ color: "#e2e8f0", fontWeight: 700 }}>{area.name || `Parcheggio ${area.id}`}</div>
                       </div>
-                      <Chip size="sm" variant="flat" color={pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success"}>
-                        {pct}%
-                      </Chip>
-                      {area.isUnderMaintenance && (
-                        <Chip size="sm" variant="flat" color="warning">
-                          Manutenzione
-                        </Chip>
-                      )}
+                      <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        <Chip size="sm" variant="flat" color={pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success"}>{pct}%</Chip>
+                        {area.isUnderMaintenance && <Chip size="sm" variant="flat" color="warning">Manutenzione</Chip>}
+                      </div>
                     </div>
-
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                      <div style={{ background: "var(--surface-02)", borderRadius: 10, padding: "0.55rem" }}>
-                        <div style={{ color: "var(--text-subtle)", fontSize: "0.7rem" }}>Capienza</div>
-                        <div style={{ color: "var(--text-primary)", fontWeight: 700 }}>{area.capacity}</div>
-                      </div>
-                      <div style={{ background: "var(--surface-02)", borderRadius: 10, padding: "0.55rem" }}>
-                        <div style={{ color: "var(--text-subtle)", fontSize: "0.7rem" }}>Disponibili</div>
-                        <div style={{ color: "#22c55e", fontWeight: 700 }}>{area.availableSpots}</div>
-                      </div>
-                      <div style={{ background: "var(--surface-02)", borderRadius: 10, padding: "0.55rem" }}>
-                        <div style={{ color: "var(--text-subtle)", fontSize: "0.7rem" }}>Tariffa</div>
-                        <div style={{ color: "#bdb23c", fontWeight: 700 }}>€ {Number(area.hourlyRate || 0).toFixed(2)}/h</div>
-                      </div>
+                      {[
+                        { label: "Capienza",    value: area.capacity,                                           color: "#e2e8f0" },
+                        { label: "Disponibili", value: area.availableSpots,                                     color: "#22c55e" },
+                        { label: "Tariffa",     value: `€ ${Number(area.hourlyRate || 0).toFixed(2)}/h`,         color: "#bdb23c" },
+                      ].map(({ label, value, color }) => (
+                        <div key={label} style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "0.55rem" }}>
+                          <div style={{ color: "#475569", fontSize: "0.7rem" }}>{label}</div>
+                          <div style={{ color, fontWeight: 700 }}>{value}</div>
+                        </div>
+                      ))}
                     </div>
-
-                    <Button
-                      size="sm"
-                      fullWidth
-                      variant="flat"
-                      onPress={() => openEditModal(area)}
-                      style={{
-                        color: "#bdb23c",
-                        background: "rgba(189,178,60,0.14)",
-                        border: "1px solid rgba(189,178,60,0.3)",
-                        fontWeight: 700,
-                      }}
-                    >
-                      Modifica
-                    </Button>
+                    {editBtn(area)}
                   </CardBody>
                 </Card>
               );
             })}
           </div>
 
-          <div
-            className="hidden md:block"
-            style={{
-              background: "var(--surface-02)",
-              border: "1px solid var(--border-soft)",
-              borderRadius: 14,
-              overflow: "hidden",
-            }}
-          >
+          {/* Desktop table */}
+          <div className="hidden md:block" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, overflow: "hidden" }}>
             <Table
               aria-label="Tabella gestione aree"
               removeWrapper
               classNames={{
-                th: "bg-transparent text-default-500 border-b border-white/5 text-xs uppercase tracking-wider",
-                td: "border-b border-white/5 text-default-300 py-3",
+                th: "bg-transparent text-slate-500 border-b border-white/[0.07] text-xs uppercase tracking-wider",
+                td: "border-b border-white/[0.07] text-slate-200 py-3",
                 tr: "hover:bg-white/[0.02] transition-colors",
               }}
             >
@@ -356,18 +207,12 @@ export default function ManageAreasPage() {
               </TableHeader>
               <TableBody items={filteredAreas}>
                 {(area) => {
-                  const occupied = Math.max(0, Number(area.capacity || 0) - Number(area.availableSpots || 0));
-                  const pct = Number(area.capacity) > 0 ? Math.round((occupied / Number(area.capacity)) * 100) : 0;
+                  const occ = Math.max(0, Number(area.capacity || 0) - Number(area.availableSpots || 0));
+                  const pct = Number(area.capacity) > 0 ? Math.round((occ / Number(area.capacity)) * 100) : 0;
                   return (
                     <TableRow key={area.id}>
-                      <TableCell>
-                        <span style={{ color: "#bdb23c", fontWeight: 700 }}>{area.id}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-                          {area.name || `Parcheggio ${area.id}`}
-                        </span>
-                      </TableCell>
+                      <TableCell><span style={{ color: "#bdb23c", fontWeight: 700 }}>{area.id}</span></TableCell>
+                      <TableCell><span style={{ fontWeight: 600 }}>{area.name || `Parcheggio ${area.id}`}</span></TableCell>
                       <TableCell>{area.capacity}</TableCell>
                       <TableCell>{area.availableSpots}</TableCell>
                       <TableCell>€ {Number(area.hourlyRate || 0).toFixed(2)}</TableCell>
@@ -377,29 +222,9 @@ export default function ManageAreasPage() {
                         </Chip>
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          size="sm"
-                          variant="flat"
-                          color={pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success"}
-                        >
-                          {pct}%
-                        </Chip>
+                        <Chip size="sm" variant="flat" color={pct >= 80 ? "danger" : pct >= 50 ? "warning" : "success"}>{pct}%</Chip>
                       </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="flat"
-                          onPress={() => openEditModal(area)}
-                          style={{
-                            color: "#bdb23c",
-                            background: "rgba(189,178,60,0.14)",
-                            border: "1px solid rgba(189,178,60,0.3)",
-                            fontWeight: 700,
-                          }}
-                        >
-                          Modifica
-                        </Button>
-                      </TableCell>
+                      <TableCell>{editBtn(area)}</TableCell>
                     </TableRow>
                   );
                 }}
@@ -409,85 +234,31 @@ export default function ManageAreasPage() {
         </>
       )}
 
+      {/* Edit Modal */}
       <Modal
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        placement="center"
-        backdrop="blur"
-        classNames={{
-          backdrop: "bg-black/60",
-        }}
-        style={{ background: "var(--panel-bg)", border: "1px solid var(--border-default)" }}
+        isOpen={isOpen} onOpenChange={onOpenChange} placement="center" backdrop="blur"
+        classNames={{ backdrop: "bg-black/60", base: "!bg-[#111827] border border-white/10 rounded-2xl" }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader style={{ color: "var(--text-primary)", fontWeight: 700 }}>
-                Modifica area {editingArea?.id}
-              </ModalHeader>
-              <ModalBody>
-                <Input
-                  label="ID Area"
-                  labelPlacement="outside"
-                  value={form.id}
-                  onValueChange={(val) => setForm((prev) => ({ ...prev, id: val }))}
-                  variant="bordered"
-                />
-                <Input
-                  label="Nome area"
-                  labelPlacement="outside"
-                  value={form.name}
-                  onValueChange={(val) => setForm((prev) => ({ ...prev, name: val }))}
-                  variant="bordered"
-                />
-                <Input
-                  label="Capienza"
-                  labelPlacement="outside"
-                  type="number"
-                  min="1"
-                  value={form.capacity}
-                  onValueChange={(val) => setForm((prev) => ({ ...prev, capacity: val }))}
-                  variant="bordered"
-                />
-                <Input
-                  label="Posti disponibili"
-                  labelPlacement="outside"
-                  type="number"
-                  min="0"
-                  value={form.availableSpots}
-                  onValueChange={(val) => setForm((prev) => ({ ...prev, availableSpots: val }))}
-                  variant="bordered"
-                />
-                <Input
-                  label="Tariffa oraria (€)"
-                  labelPlacement="outside"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={form.hourlyRate}
-                  onValueChange={(val) => setForm((prev) => ({ ...prev, hourlyRate: val }))}
-                  variant="bordered"
-                />
-                <Switch
-                  isSelected={form.isUnderMaintenance}
-                  onValueChange={(value) => setForm((prev) => ({ ...prev, isUnderMaintenance: value }))}
-                  color="warning"
-                >
+              <ModalHeader style={{ color: "#e2e8f0", fontWeight: 700 }}>Modifica area {editingArea?.id}</ModalHeader>
+              <ModalBody style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {error && <div className="alert-error">{error}</div>}
+                <Input label="ID Area"           labelPlacement="outside" value={form.id}         onValueChange={(v) => setForm((p) => ({ ...p, id: v }))}         variant="bordered" classNames={inputCls} />
+                <Input label="Nome area"         labelPlacement="outside" value={form.name}       onValueChange={(v) => setForm((p) => ({ ...p, name: v }))}       variant="bordered" classNames={inputCls} />
+                <Input label="Capienza"          labelPlacement="outside" type="number" min="1"   value={form.capacity}  onValueChange={(v) => setForm((p) => ({ ...p, capacity: v }))}  variant="bordered" classNames={inputCls} />
+                <Input label="Tariffa oraria (€)" labelPlacement="outside" type="number" min="0" step="0.1" value={form.hourlyRate} onValueChange={(v) => setForm((p) => ({ ...p, hourlyRate: v }))} variant="bordered" classNames={inputCls} />
+                <Switch isSelected={form.isUnderMaintenance} color="warning" onValueChange={(v) => setForm((p) => ({ ...p, isUnderMaintenance: v }))}>
                   Area in manutenzione
                 </Switch>
               </ModalBody>
               <ModalFooter>
-                <Button variant="flat" onPress={onClose} style={{ color: "var(--text-muted)" }}>
-                  Annulla
-                </Button>
+                <Button variant="flat" onPress={onClose} style={{ color: "#64748b" }}>Annulla</Button>
                 <Button
-                  isLoading={saving}
-                  onPress={() => handleSave(onClose)}
-                  style={{
-                    background: "linear-gradient(135deg, #bdb23c, #9b9b00)",
-                    color: "white",
-                    fontWeight: 700,
-                  }}
+                  isLoading={saving} onPress={() => handleSave(onClose)}
+                  className="font-bold text-white"
+                  style={{ background: "linear-gradient(135deg,#bdb23c,#9b9b00)" }}
                 >
                   Salva modifiche
                 </Button>
