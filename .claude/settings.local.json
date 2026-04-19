@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(npm install:*)",
+      "Bash(cd /Users/davidebosio/Documents/parcheggio-bh/backend && .venv/bin/pip install flask-limiter 2>&1 | tail -5)",
+      "Bash(.venv/bin/python -c \"\nfrom app import create_app\napp = create_app\\(\\)\nprint\\('Flask OK'\\)\nwith app.test_client\\(\\) as c:\n    r = c.get\\('/health'\\)\n    print\\('Health:', r.status_code, r.get_json\\(\\)\\)\n\")",
+      "Bash(cd /Users/davidebosio/Documents/parcheggio-bh && npm run build --workspace=frontend 2>&1 | tail -20)",
+      "Bash(npm run:*)",
+      "Bash(cd /Users/davidebosio/Documents/parcheggio-bh/backend && .venv/bin/python scripts/migrate_db.py)"
+    ]
+  }
+}
