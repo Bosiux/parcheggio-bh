@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -10,6 +11,7 @@ from psycopg2.extras import RealDictCursor
 from db import HAS_SESSIONS_UPDATED_AT, get_db_connection
 from extensions import limiter
 
+logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
@@ -117,6 +119,7 @@ def login():
             200,
         )
     except Exception as exc:
+        logger.exception("Errore POST /auth/login")
         return jsonify({"message": "Errore durante il login.", "error": str(exc)}), 500
 
 
