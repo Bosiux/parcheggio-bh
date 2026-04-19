@@ -8,10 +8,14 @@ import {
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 async function authRequest(path, method, body = null) {
+  const sessionId = getSessionCookie();
+  const headers = { "Content-Type": "application/json" };
+  if (sessionId) headers["X-Session-Id"] = sessionId;
+
   const options = {
     method,
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers,
   };
 
   if (body) options.body = JSON.stringify(body);

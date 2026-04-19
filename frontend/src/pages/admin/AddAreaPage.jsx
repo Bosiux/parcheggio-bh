@@ -5,24 +5,23 @@ import { useNavigate } from "react-router-dom";
 import { addArea } from "../../api/admin.api.js";
 import Layout from "../../components/Layout.jsx";
 
-const iconAlarmStyle = {
-  width: 22,
-  height: 22,
-  display: "block",
-  objectFit: "contain",
+const CARD_BASE = "!bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl rounded-2xl";
+
+const inputCls = {
+  inputWrapper: "border-white/10 bg-white/[0.05] hover:!border-yellow-500/50 focus-within:!border-yellow-500",
+  input: "!text-slate-100 placeholder:!text-slate-500",
+  label: "!text-slate-400",
+  description: "!text-slate-600",
 };
 
 export default function AddAreaPage() {
-  const navigate  = useNavigate();
-  const [form, setForm] = useState({ id: "", name: "", capacity: "" });
+  const navigate = useNavigate();
+  const [form, setForm]       = useState({ id: "", name: "", capacity: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
   const [success, setSuccess] = useState(false);
 
-  const handleChange = (field) => (val) => {
-    setForm((prev) => ({ ...prev, [field]: val }));
-    setError("");
-  };
+  const handleChange = (field) => (val) => { setForm((p) => ({ ...p, [field]: val })); setError(""); };
 
   const validate = () => {
     if (!form.id.trim()) return "L'ID area è obbligatorio.";
@@ -33,17 +32,11 @@ export default function AddAreaPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationError = validate();
-    if (validationError) { setError(validationError); return; }
-
-    setLoading(true);
-    setError("");
+    const err = validate();
+    if (err) { setError(err); return; }
+    setLoading(true); setError("");
     try {
-      await addArea({
-        id:       form.id.trim(),
-        name:     form.name.trim() || undefined,
-        capacity: Number(form.capacity),
-      });
+      await addArea({ id: form.id.trim(), name: form.name.trim() || undefined, capacity: Number(form.capacity) });
       setSuccess(true);
       setForm({ id: "", name: "", capacity: "" });
     } catch (err) {
@@ -56,70 +49,37 @@ export default function AddAreaPage() {
   return (
     <Layout>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
-        <h1 style={{ color: "var(--text-primary)", fontWeight: 800, fontSize: "1.75rem", marginBottom: "0.5rem" }}>
+        <h1 style={{ color: "#e2e8f0", fontWeight: 800, fontSize: "1.75rem", marginBottom: "0.5rem" }}>
           Aggiungi Area Parcheggio
         </h1>
-        <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>
+        <p style={{ color: "#64748b", marginBottom: "2rem" }}>
           Registra una nuova area nel sistema di gestione.
         </p>
 
-        {/* Success banner */}
         {success && (
-          <div
-            style={{
-              background: "rgba(34,197,94,0.1)",
-              border: "1px solid rgba(34,197,94,0.3)",
-              borderRadius: 12,
-              padding: "1rem 1.25rem",
-              color: "#86efac",
-              marginBottom: "1.5rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>{<img src="/check.svg" alt="Aree" style={{ width: 22, height: 22, display: "block", objectFit: "contain" }} />} Area aggiunta con successo!</span>
+          <div className="alert-success" style={{ marginBottom: "1.5rem", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <img src="/check.svg" alt="OK" style={{ width: 22, height: 22, objectFit: "contain" }} />
+              Area aggiunta con successo!
+            </div>
             <Button
-              size="sm"
-              variant="flat"
-              onPress={() => navigate("/admin")}
-              style={{
-                color: "#15803d",
-                background: "rgba(34,197,94,0.14)",
-                border: "1px solid rgba(34,197,94,0.36)",
-                fontWeight: 700,
-              }}
+              size="sm" variant="flat" onPress={() => navigate("/admin")}
+              style={{ color: "#15803d", background: "rgba(34,197,94,0.14)", border: "1px solid rgba(34,197,94,0.36)", fontWeight: 700 }}
             >
               Torna al pannello
             </Button>
           </div>
         )}
 
-        {/* Error */}
         {error && (
-          <div
-            style={{
-              background: "rgba(239,68,68,0.1)",
-              border: "1px solid rgba(239,68,68,0.3)",
-              borderRadius: 12,
-              padding: "1rem 1.25rem",
-              color: "#fca5a5",
-              marginBottom: "1.5rem",
-            }}
-          >
-            {<img src="/attention.svg" alt="Errore" style={iconAlarmStyle} />} {error}
+          <div className="alert-error" style={{ marginBottom: "1.5rem" }}>
+            <img src="/attention.svg" alt="Errore" style={{ width: 22, height: 22, objectFit: "contain" }} /> {error}
           </div>
         )}
 
-        <Card
-          style={{
-            background: "var(--surface-04)",
-            border: "1px solid var(--border-default)",
-          }}
-        >
+        <Card shadow="none" classNames={{ base: CARD_BASE }}>
           <CardBody style={{ padding: "2rem" }}>
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              {/* ID Area */}
               <Input
                 id="area-id-input"
                 label="ID Area *"
@@ -129,16 +89,9 @@ export default function AddAreaPage() {
                 variant="bordered"
                 description="Identificativo univoco dell'area (es. P01, NORD-1)"
                 isDisabled={loading}
-                classNames={{
-                  inputWrapper: "border-white/10 bg-white/5 hover:border-yellow-500/50 focus-within:border-yellow-500",
-                  input: "text-[var(--text-primary)] placeholder:text-[var(--text-muted)]",
-                  label: "text-[var(--text-muted)]",
-                  description: "text-[var(--text-subtle)]",
-                }}
-                startContent={<span style={{ color: "#bdb23c" }}>{<img src="/tag.svg" alt="ID Area" style={{ width: 22, height: 22, display: "block", objectFit: "contain" }} />}</span>}
+                classNames={inputCls}
+                startContent={<img src="/tag.svg" alt="ID" style={{ width: 22, height: 22, objectFit: "contain" }} />}
               />
-
-              {/* Nome (opzionale) */}
               <Input
                 id="area-name-input"
                 label="Nome area (opzionale)"
@@ -148,16 +101,9 @@ export default function AddAreaPage() {
                 variant="bordered"
                 description="Nome descrittivo visibile agli utenti"
                 isDisabled={loading}
-                classNames={{
-                  inputWrapper: "border-white/10 bg-white/5 hover:border-yellow-500/50 focus-within:border-yellow-500",
-                  input: "text-[var(--text-primary)] placeholder:text-[var(--text-muted)]",
-                  label: "text-[var(--text-muted)]",
-                  description: "text-[var(--text-subtle)]",
-                }}
-                startContent={<span style={{ color: "#9b9b00" }}>{<img src="/area.svg" alt="Aree" style={{ width: 22, height: 22, display: "block", objectFit: "contain" }} />}</span>}
+                classNames={inputCls}
+                startContent={<img src="/area.svg" alt="Nome" style={{ width: 22, height: 22, objectFit: "contain" }} />}
               />
-
-              {/* Capienza */}
               <Input
                 id="area-capacity-input"
                 label="Capienza massima *"
@@ -169,34 +115,15 @@ export default function AddAreaPage() {
                 variant="bordered"
                 description="Numero totale di posti auto nell'area"
                 isDisabled={loading}
-                classNames={{
-                  inputWrapper: "border-white/10 bg-white/5 hover:border-yellow-500/50 focus-within:border-yellow-500",
-                  input: "text-[var(--text-primary)] placeholder:text-[var(--text-muted)]",
-                  label: "text-[var(--text-muted)]",
-                  description: "text-[var(--text-subtle)]",
-                }}
-                startContent={<span style={{ color: "#7f7800" }}>{<img src="/car.svg" alt="Capienza" style={{ width: 26, height: 26, display: "block", objectFit: "contain" }} />}</span>}
+                classNames={inputCls}
+                startContent={<img src="/car.svg" alt="Capienza" style={{ width: 24, height: 24, objectFit: "contain" }} />}
               />
 
-              {/* Preview */}
               {(form.id || form.capacity) && (
-                <div
-                  style={{
-                    background: "rgba(189,178,60,0.06)",
-                    border: "1px solid rgba(189,178,60,0.15)",
-                    borderRadius: 10,
-                    padding: "1rem",
-                  }}
-                >
-                  <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>
-                    Anteprima
-                  </p>
-                  <p style={{ color: "var(--text-primary)", fontWeight: 600, margin: 0 }}>
-                    {form.name || `Parcheggio ${form.id}`}
-                  </p>
-                  <p style={{ color: "var(--text-subtle)", fontSize: "0.875rem", margin: "0.25rem 0 0" }}>
-                    ID: {form.id || "—"} · Capienza: {form.capacity || "—"} posti
-                  </p>
+                <div style={{ background: "rgba(189,178,60,0.06)", border: "1px solid rgba(189,178,60,0.15)", borderRadius: 10, padding: "1rem" }}>
+                  <p style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Anteprima</p>
+                  <p style={{ color: "#e2e8f0", fontWeight: 600, margin: 0 }}>{form.name || `Parcheggio ${form.id}`}</p>
+                  <p style={{ color: "#475569", fontSize: "0.875rem", margin: "0.25rem 0 0" }}>ID: {form.id || "—"} · Capienza: {form.capacity || "—"} posti</p>
                 </div>
               )}
 
@@ -204,15 +131,12 @@ export default function AddAreaPage() {
                 id="add-area-submit"
                 type="submit"
                 isLoading={loading}
-                fullWidth
-                size="lg"
+                fullWidth size="lg"
+                className="font-bold text-white mt-1"
                 style={{
                   background: "linear-gradient(135deg, #bdb23c, #9b9b00)",
-                  color: "white",
-                  fontWeight: 700,
                   height: 52,
                   boxShadow: "0 10px 30px rgba(189,178,60,0.3)",
-                  marginTop: "0.5rem",
                 }}
               >
                 {loading ? "Creazione in corso..." : "Aggiungi Area"}

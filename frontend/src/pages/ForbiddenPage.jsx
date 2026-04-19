@@ -9,29 +9,19 @@ export default function ForbiddenPage() {
 
   return (
     <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, var(--app-bg) 0%, var(--app-bg-mid) 50%, var(--app-bg-end) 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "column",
-        gap: "1.5rem",
-        textAlign: "center",
-        padding: "2rem",
-      }}
+      className="min-h-screen flex flex-col items-center justify-center gap-6 text-center p-8"
+      style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #0d1b2a 50%, #0a0a1a 100%)" }}
     >
-      <div style={{ fontSize: 80 }}><img src="/forbidden.svg" alt="Aree" style={{ width: 240, height: 240, display: "block", objectFit: "contain" }} /></div>
-      <h1 style={{ fontSize: "2.5rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
-        Accesso Negato
-      </h1>
-      <p style={{ color: "var(--text-muted)", fontSize: "1.1rem", maxWidth: 400 }}>
+      <img src="/forbidden.svg" alt="Accesso negato" style={{ width: 220, height: 220, objectFit: "contain" }} />
+      <h1 className="text-4xl font-extrabold m-0" style={{ color: "#e2e8f0" }}>Accesso Negato</h1>
+      <p className="text-lg max-w-sm m-0" style={{ color: "#64748b" }}>
         Non hai i permessi necessari per visualizzare questa pagina.
       </p>
       <Button
-        onPress={() => navigate(user?.role === "admin" ? "/admin" : "/dashboard")}
-        style={{ background: "linear-gradient(135deg, #bdb23c, #9b9b00)", color: "white" }}
         size="lg"
+        className="font-semibold text-white"
+        style={{ background: "linear-gradient(135deg, #bdb23c, #9b9b00)" }}
+        onPress={() => navigate(user?.role === "admin" ? "/admin" : "/dashboard")}
       >
         Torna alla Dashboard
       </Button>

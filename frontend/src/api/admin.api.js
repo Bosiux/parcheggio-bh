@@ -16,3 +16,6 @@ export const getDailyStats = async (areaId) => {
 
 export const deleteArea = async (areaId) =>
   api.delete(`/admin/areas/${encodeURIComponent(areaId)}`);
+
+export const getRevenueStats = async (period = "30d") =>
+  api.get(`/admin/stats/revenue?period=${encodeURIComponent(period)}`);

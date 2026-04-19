@@ -44,6 +44,8 @@ CREATE TABLE parking_areas (
     capacity INTEGER NOT NULL CHECK (capacity > 0),
     hourly_rate NUMERIC(10, 2) NOT NULL CHECK (hourly_rate >= 0),
     is_under_maintenance BOOLEAN NOT NULL DEFAULT FALSE,
+    lat DOUBLE PRECISION,
+    lng DOUBLE PRECISION,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -72,12 +74,12 @@ INSERT INTO users (username, password_hash, role) VALUES
     ('admin', '$2b$12$dmulsft2VLXChL0A9ArbU.bPMIYU7EFK7M7sxaEy.4Akn6o76PT8G', 'admin'),
     ('user', '$2b$12$j1lfzRrpTDPcbgdEhBkWeubH1/fC3xdI.GMmlrTIoox9Ze/FkTIaa', 'user');
 
-INSERT INTO parking_areas (id, name, capacity, hourly_rate, is_under_maintenance) VALUES
-    ('P01', 'Parcheggio Centro', 80, 2.50, FALSE),
-    ('P02', 'Parcheggio Stazione', 60, 2.00, FALSE),
-    ('P03', 'Parcheggio Ospedale', 100, 1.80, FALSE),
-    ('P04', 'Parcheggio Via Roma', 40, 3.20, FALSE),
-    ('P05', 'Parcheggio Castello', 30, 2.70, FALSE);
+INSERT INTO parking_areas (id, name, capacity, hourly_rate, is_under_maintenance, lat, lng) VALUES
+    ('P01', 'Parcheggio Centro',    80, 2.50, FALSE, 45.5416, 10.2118),
+    ('P02', 'Parcheggio Stazione',  60, 2.00, FALSE, 45.5347, 10.2173),
+    ('P03', 'Parcheggio Ospedale', 100, 1.80, FALSE, 45.5489, 10.2204),
+    ('P04', 'Parcheggio Via Roma',  40, 3.20, FALSE, 45.5398, 10.2089),
+    ('P05', 'Parcheggio Castello',  30, 2.70, FALSE, 45.5475, 10.2042);
 
 INSERT INTO bookings (id, user_id, area_id, start_time, end_time, duration_hours, hourly_rate, total_price, status) VALUES
     ('BK001', 2, 'P01', NOW() - INTERVAL '2 hours', NOW() - INTERVAL '1 hour', 1, 2.50, 2.50, 'completed'),

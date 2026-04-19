@@ -5,19 +5,6 @@ import { Button, Input, Card, CardBody } from "@heroui/react";
 import { login as apiLogin, register as apiRegister } from "../api/auth.api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
-const iconStyle = {
-  width: 22,
-  height: 22,
-  display: "block",
-  objectFit: "contain",
-};
-const iconAlarmStyle = {
-  width: 35,
-  height: 35,
-  display: "block",
-  objectFit: "contain",
-};
-
 export default function LoginPage() {
   const [mode, setMode] = useState("login");
   const [username, setUsername] = useState("");
@@ -41,36 +28,20 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!username.trim() || !password.trim()) {
-      setError("Inserisci username e password.");
-      return;
-    }
+    if (!username.trim() || !password.trim()) { setError("Inserisci username e password."); return; }
     if (mode === "register") {
-      if (password.trim().length < 6) {
-        setError("La password deve contenere almeno 6 caratteri.");
-        return;
-      }
-      if (password !== confirmPassword) {
-        setError("Le password non coincidono.");
-        return;
-      }
+      if (password.trim().length < 8) { setError("La password deve contenere almeno 8 caratteri."); return; }
+      if (password !== confirmPassword) { setError("Le password non coincidono."); return; }
     }
-
     setLoading(true);
     try {
-      const userData =
-        mode === "register"
-          ? await apiRegister({ username: username.trim(), password: password.trim() })
-          : await apiLogin(username.trim(), password);
+      const userData = mode === "register"
+        ? await apiRegister({ username: username.trim(), password: password.trim() })
+        : await apiLogin(username.trim(), password);
       login(userData);
-      // Usa il redirect precedente solo se compatibile col ruolo.
-      if (isAllowedPathForRole(from, userData.role)) {
-        navigate(from, { replace: true });
-      } else if (userData.role === "admin") {
-        navigate("/admin", { replace: true });
-      } else {
-        navigate("/dashboard", { replace: true });
-      }
+      if (isAllowedPathForRole(from, userData.role)) navigate(from, { replace: true });
+      else if (userData.role === "admin") navigate("/admin", { replace: true });
+      else navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Credenziali non valide.");
     } finally {
@@ -78,132 +49,74 @@ export default function LoginPage() {
     }
   };
 
+  const inputCls = {
+    inputWrapper: "border-white/10 bg-white/[0.05] hover:!border-yellow-500/50 focus-within:!border-yellow-500",
+    input: "!text-slate-100 !font-medium placeholder:!text-slate-500",
+    label: "!text-slate-400",
+  };
+
   return (
     <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, var(--app-bg) 0%, var(--app-bg-mid) 50%, var(--app-bg-end) 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "1rem",
-      }}
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #0d1b2a 50%, #0a0a1a 100%)" }}
     >
-      {/* Background decorations */}
+      {/* Ambient glows */}
       <div
-        style={{
-          position: "fixed",
-          top: "10%",
-          left: "15%",
-          width: 400,
-          height: 400,
-          background: "radial-gradient(circle, rgba(189,178,60,0.12) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
+        className="fixed top-[10%] left-[15%] w-96 h-96 rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(189,178,60,0.12) 0%, transparent 70%)" }}
       />
       <div
-        style={{
-          position: "fixed",
-          bottom: "10%",
-          right: "15%",
-          width: 300,
-          height: 300,
-          background: "radial-gradient(circle, rgba(155,155,0,0.1) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
+        className="fixed bottom-[10%] right-[15%] w-72 h-72 rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(155,155,0,0.10) 0%, transparent 70%)" }}
       />
 
-      <div style={{ width: "100%", maxWidth: 440, position: "relative", zIndex: 1 }}>
-        {/* Logo/Header */}
-        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              
-              borderRadius: 20,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 36,
-              margin: "0 auto 1rem",
-              
-            }}
-          >
-            <img src="/logoPBH.svg" alt="Logo" />
-          </div>
+      <div className="w-full max-w-[440px] relative z-10">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <img src="/logoPBH.svg" alt="Logo" className="w-16 h-16 mx-auto mb-3 object-contain" />
           <h1
+            className="text-4xl font-extrabold m-0"
             style={{
-              fontSize: "2rem",
-              fontWeight: 800,
               background: "linear-gradient(135deg, #bcb13d, #898025, #807613)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              margin: 0,
+              backgroundClip: "text",
             }}
           >
             ParcheggiBH
           </h1>
-          <p style={{ color: "var(--text-muted)", marginTop: "0.5rem", fontSize: "0.95rem" }}>
-            Comune di Brescia — Servizio di Parcheggi
-          </p>
+          <p className="text-slate-500 mt-2 text-sm">Comune di Brescia — Servizio di Parcheggi</p>
         </div>
 
-        {/* Login Card */}
+        {/* Card */}
         <Card
-          className="glass-card"
-          style={{
-            background: "var(--surface-04)",
-            border: "1px solid var(--border-default)",
+          shadow="none"
+          classNames={{
+            base: "!bg-white/[0.04] border border-white/[0.08] backdrop-blur-2xl rounded-2xl",
           }}
         >
-          <CardBody style={{ padding: "2rem" }}>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                marginBottom: "1.5rem",
-                textAlign: "center",
-              }}
-            >
+          <CardBody className="p-8">
+            <h2 className="text-lg font-bold text-slate-100 text-center mb-6">
               {mode === "login" ? "Accedi al portale" : "Crea account utente"}
             </h2>
 
             {error && (
-              <div
-                style={{
-                  background: "rgba(239,68,68,0.12)",
-                  border: "1px solid rgba(239,68,68,0.3)",
-                  borderRadius: 10,
-                  padding: "0.875rem 1rem",
-                  marginBottom: "1.25rem",
-                  color: "#fca5a5",
-                  fontSize: "0.875rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <img src="/attention.svg" alt="Errore" style={iconAlarmStyle} /> {error}
+              <div className="alert-error mb-5">
+                <img src="/attention.svg" alt="Errore" style={{ width: 26, height: 26, objectFit: "contain" }} />
+                {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <Input
                 id="login-username"
                 label="Username"
-                labelPlacement="outside"
                 placeholder="Inserisci il tuo username"
                 value={username}
                 onValueChange={setUsername}
                 variant="bordered"
-                classNames={{
-                  inputWrapper: "border-[var(--border-default)] bg-[var(--login-input-bg)] hover:border-yellow-500/50 focus-within:border-yellow-500",
-                  input: "!text-[var(--text-primary)] !font-medium placeholder:!text-[var(--text-secondary)]",
-                  label: "!text-[var(--login-label-color)] !opacity-100 mb-1 font-bold",
-                }}
-                startContent={<span style={{ color: "#bdb23c", fontSize: 19, marginRight: 6 }}><img src="/user.svg" alt="Username" style={iconStyle} /></span>}
+                size="lg"
+                classNames={inputCls}
                 isDisabled={loading}
                 autoComplete="username"
               />
@@ -211,25 +124,24 @@ export default function LoginPage() {
               <Input
                 id="login-password"
                 label="Password"
-                labelPlacement="outside"
                 placeholder="Inserisci la tua password"
                 value={password}
                 onValueChange={setPassword}
                 type={showPassword ? "text" : "password"}
                 variant="bordered"
-                classNames={{
-                  inputWrapper: "border-[var(--border-default)] bg-[var(--login-input-bg)] hover:border-yellow-500/50 focus-within:border-yellow-500",
-                  input: "!text-[var(--text-primary)] !font-medium placeholder:!text-[var(--text-secondary)]",
-                  label: "!text-[var(--login-label-color)] !opacity-100 mb-1 font-bold",
-                }}
-                startContent={<span style={{ color: "#bdb23c", fontSize: 19, marginRight: 6 }}><img src="/pw.svg" alt="Password" style={iconStyle} /></span>}
+                size="lg"
+                classNames={inputCls}
                 endContent={
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 0, fontSize: 19     }}
+                    className="bg-transparent border-none cursor-pointer p-0 flex items-center"
                   >
-                    {showPassword ? <img src="/hide.svg" alt="Nascondi password" style={iconStyle} /> : <img src="/show.svg" alt="Mostra password" style={iconStyle} />}
+                    <img
+                      src={showPassword ? "/hide.svg" : "/show.svg"}
+                      alt={showPassword ? "Nascondi" : "Mostra"}
+                      style={{ width: 20, height: 20, objectFit: "contain", opacity: 0.5 }}
+                    />
                   </button>
                 }
                 isDisabled={loading}
@@ -240,17 +152,13 @@ export default function LoginPage() {
                 <Input
                   id="register-password-confirm"
                   label="Conferma password"
-                  labelPlacement="outside"
                   placeholder="Ripeti la password"
                   value={confirmPassword}
                   onValueChange={setConfirmPassword}
                   type={showPassword ? "text" : "password"}
                   variant="bordered"
-                  classNames={{
-                    inputWrapper: "border-[var(--border-default)] bg-[var(--login-input-bg)] hover:border-yellow-500/50 focus-within:border-yellow-500",
-                    input: "!text-[var(--text-primary)] !font-medium placeholder:!text-[var(--text-secondary)]",
-                    label: "!text-[var(--login-label-color)] !opacity-100 mb-1 font-bold",
-                  }}
+                  size="lg"
+                  classNames={inputCls}
                   isDisabled={loading}
                   autoComplete="new-password"
                 />
@@ -260,25 +168,17 @@ export default function LoginPage() {
                 id="login-submit"
                 type="submit"
                 isLoading={loading}
-                style={{
-                  background: "linear-gradient(135deg, #bdb23c, #9b9b00)",
-                  color: "white",
-                  fontWeight: 600,
-                  height: 48,
-                  fontSize: "1rem",
-                  marginTop: "0.5rem",
-                  boxShadow: "0 10px 30px rgba(189,178,60,0.3)",
-                }}
                 size="lg"
                 fullWidth
+                className="mt-1 font-semibold text-white"
+                style={{
+                  background: "linear-gradient(135deg, #bdb23c, #9b9b00)",
+                  boxShadow: "0 10px 30px rgba(189,178,60,0.30)",
+                }}
               >
                 {loading
-                  ? mode === "login"
-                    ? "Accesso in corso..."
-                    : "Registrazione in corso..."
-                  : mode === "login"
-                  ? "Accedi"
-                  : "Registrati"}
+                  ? (mode === "login" ? "Accesso in corso..." : "Registrazione in corso...")
+                  : (mode === "login" ? "Accedi" : "Registrati")}
               </Button>
 
               <Button
@@ -286,29 +186,18 @@ export default function LoginPage() {
                 variant="light"
                 isDisabled={loading}
                 onPress={() => {
-                  setMode((prev) => (prev === "login" ? "register" : "login"));
-                  setError("");
-                  setPassword("");
-                  setConfirmPassword("");
+                  setMode((p) => p === "login" ? "register" : "login");
+                  setError(""); setPassword(""); setConfirmPassword("");
                 }}
-                style={{ color: "var(--text-secondary)", fontWeight: 600 }}
+                className="text-slate-400 font-semibold"
               >
-                {mode === "login"
-                  ? "Non hai un account? Registrati"
-                  : "Hai già un account? Accedi"}
+                {mode === "login" ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
               </Button>
             </form>
           </CardBody>
         </Card>
 
-        <p
-          style={{
-            textAlign: "center",
-            color: "var(--text-subtle)",
-            fontSize: "0.8rem",
-            marginTop: "1.5rem",
-          }}
-        >
+        <p className="text-center text-slate-600 text-xs mt-6">
           © 2026 Comune di Brescia — ParcheggiBH
         </p>
       </div>

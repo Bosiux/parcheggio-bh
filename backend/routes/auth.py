@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -7,16 +8,12 @@ import psycopg2
 from flask import Blueprint, jsonify, request
 from psycopg2.extras import RealDictCursor
 
+from db import HAS_SESSIONS_UPDATED_AT, get_db_connection
+from extensions import limiter
+
+logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
-SESSIONS = {}
-
-
-def get_db_connection():
-    database_url = os.getenv("DATABASE_URL")
-    if not database_url:
-        raise RuntimeError("DATABASE_URL non configurato")
-    return psycopg2.connect(database_url)
 
 
 def now_utc():
@@ -35,40 +32,44 @@ def build_tokens():
     }
 
 
-def create_session(user_id):
+def create_session(cursor, user_id):
     session_id = secrets.token_urlsafe(24)
     tokens = build_tokens()
+    access_exp = datetime.fromtimestamp(tokens["accessTokenExpiresAt"] / 1000, tz=timezone.utc)
+    refresh_exp = datetime.fromtimestamp(tokens["refreshTokenExpiresAt"] / 1000, tz=timezone.utc)
 
-    SESSIONS[session_id] = {
-        "user_id": user_id,
-        "access_token": tokens["accessToken"],
-        "refresh_token": tokens["refreshToken"],
-        "access_token_expires_at": datetime.fromtimestamp(tokens["accessTokenExpiresAt"] / 1000, tz=timezone.utc),
-        "refresh_token_expires_at": datetime.fromtimestamp(tokens["refreshTokenExpiresAt"] / 1000, tz=timezone.utc),
-    }
-
+    cursor.execute(
+        """
+        INSERT INTO user_sessions
+            (session_id, user_id, access_token, refresh_token,
+             access_token_expires_at, refresh_token_expires_at)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """,
+        (session_id, user_id, tokens["accessToken"], tokens["refreshToken"], access_exp, refresh_exp),
+    )
     return session_id, tokens
+
+
+def get_session_data(cursor, session_id):
+    cursor.execute(
+        """
+        SELECT user_id, access_token, refresh_token,
+               access_token_expires_at, refresh_token_expires_at
+        FROM user_sessions
+        WHERE session_id = %s
+          AND refresh_token_expires_at > NOW()
+        """,
+        (session_id,),
+    )
+    return cursor.fetchone()
 
 
 def get_session_identifier():
     header_value = request.headers.get("X-Session-Id")
     if header_value:
         return header_value
-
     body = request.get_json(silent=True) or {}
     return body.get("sessionId")
-
-
-def get_session_data(session_id):
-    session_data = SESSIONS.get(session_id)
-    if not session_data:
-        return None
-
-    if session_data["refresh_token_expires_at"] <= now_utc():
-        SESSIONS.pop(session_id, None)
-        return None
-
-    return session_data
 
 
 def hash_password(password: str) -> str:
@@ -80,6 +81,7 @@ def verify_password(password_hash: str, password: str) -> bool:
 
 
 @auth_bp.post("/login")
+@limiter.limit("10 per minute")
 def login():
     payload = request.get_json(silent=True) or {}
     username = str(payload.get("username", "")).strip().lower()
@@ -99,7 +101,7 @@ def login():
                 if not user_row or not verify_password(user_row["password_hash"], password):
                     return jsonify({"message": "Credenziali non valide."}), 401
 
-                session_id, tokens = create_session(user_row["id"])
+                session_id, tokens = create_session(cursor, user_row["id"])
             conn.commit()
 
         return (
@@ -117,10 +119,12 @@ def login():
             200,
         )
     except Exception as exc:
+        logger.exception("Errore POST /auth/login")
         return jsonify({"message": "Errore durante il login.", "error": str(exc)}), 500
 
 
 @auth_bp.post("/register")
+@limiter.limit("5 per minute")
 def register():
     payload = request.get_json(silent=True) or {}
     username = str(payload.get("username", "")).strip().lower()
@@ -128,8 +132,8 @@ def register():
 
     if not username:
         return jsonify({"message": "Username obbligatorio."}), 400
-    if len(password) < 6:
-        return jsonify({"message": "La password deve avere almeno 6 caratteri."}), 400
+    if len(password) < 8:
+        return jsonify({"message": "La password deve avere almeno 8 caratteri."}), 400
 
     try:
         with get_db_connection() as conn:
@@ -147,7 +151,7 @@ def register():
                     (username, hash_password(password)),
                 )
                 user_row = cursor.fetchone()
-                session_id, tokens = create_session(user_row["id"])
+                session_id, tokens = create_session(cursor, user_row["id"])
             conn.commit()
 
         return (
@@ -165,7 +169,10 @@ def logout():
         return jsonify({"message": "Sessione non valida."}), 401
 
     try:
-        SESSIONS.pop(session_id, None)
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("DELETE FROM user_sessions WHERE session_id = %s", (session_id,))
+            conn.commit()
         return jsonify({"message": "Logout effettuato."}), 200
     except Exception as exc:
         return jsonify({"message": "Errore durante il logout.", "error": str(exc)}), 500
@@ -178,18 +185,19 @@ def get_me():
         return jsonify({"message": "Sessione non valida."}), 401
 
     try:
-        session_data = get_session_data(session_id)
-        if not session_data:
-            return jsonify({"message": "Sessione scaduta o non valida."}), 401
-
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("SELECT id, username, role FROM users WHERE id = %s", (session_data["user_id"],))
+                session_data = get_session_data(cursor, session_id)
+                if not session_data:
+                    return jsonify({"message": "Sessione scaduta o non valida."}), 401
+                cursor.execute(
+                    "SELECT id, username, role FROM users WHERE id = %s",
+                    (session_data["user_id"],),
+                )
                 user_row = cursor.fetchone()
 
         if not user_row:
-            SESSIONS.pop(session_id, None)
-            return jsonify({"message": "Utente non valido."}), 401
+            return jsonify({"message": "Utente non trovato."}), 401
 
         return jsonify({"user": user_row}), 200
     except Exception as exc:
@@ -203,16 +211,23 @@ def refresh():
         return jsonify({"message": "Sessione non valida."}), 401
 
     try:
-        session_data = get_session_data(session_id)
-        if not session_data:
-            return jsonify({"message": "Sessione scaduta."}), 401
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                session_data = get_session_data(cursor, session_id)
+                if not session_data:
+                    return jsonify({"message": "Sessione scaduta."}), 401
 
-        # TODO: validare anche fingerprint/device prima del refresh token.
-        access_expires_at = now_utc() + timedelta(minutes=15)
-        access_token = secrets.token_urlsafe(32)
+                access_expires_at = now_utc() + timedelta(minutes=15)
+                access_token = secrets.token_urlsafe(32)
 
-        session_data["access_token"] = access_token
-        session_data["access_token_expires_at"] = access_expires_at
+                set_parts = ["access_token = %s", "access_token_expires_at = %s"]
+                if HAS_SESSIONS_UPDATED_AT:
+                    set_parts.append("updated_at = NOW()")
+                cursor.execute(
+                    f"UPDATE user_sessions SET {', '.join(set_parts)} WHERE session_id = %s",
+                    (access_token, access_expires_at, session_id),
+                )
+            conn.commit()
 
         return (
             jsonify(
