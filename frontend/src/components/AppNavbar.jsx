@@ -43,11 +43,7 @@ export default function AppNavbar() {
       isMenuOpen={isMenuOpen}
       onMenuOpenChange={setIsMenuOpen}
       maxWidth="xl"
-      style={{
-        background: "rgba(13,27,42,0.85)",
-        backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.07)",
-      }}
+      className="bg-white/80 dark:bg-[#0d1b2a]/85 border-b border-black/5 dark:border-white/5 backdrop-blur-xl"
     >
       <NavbarContent className="sm:hidden" justify="start">
         <NavbarMenuToggle aria-label={isMenuOpen ? "Chiudi menu" : "Apri menu"} />
@@ -55,7 +51,9 @@ export default function AppNavbar() {
 
       <NavbarBrand>
         <Link to={user?.role === "admin" ? "/admin" : "/"} className="flex items-center gap-2 no-underline">
-          <img src="/logoPBH.svg" alt="Logo" style={{ width: 30, height: 30, objectFit: "contain" }} />
+          <div className="dark:bg-transparent bg-[#4d4812]/50 backdrop-blur-md p-1 rounded-md flex items-center justify-center border border-[#bdb23c]/30 dark:border-none shadow-sm shadow-[#bdb23c]/10 dark:shadow-none">
+            <img src="/logoPBH.svg" alt="Logo" style={{ width: 28, height: 28, objectFit: "contain" }} />
+          </div>
           <span
             className="font-bold text-lg"
             style={{
@@ -94,7 +92,7 @@ export default function AppNavbar() {
         {user && (
           <>
             <NavbarItem className="hidden sm:flex items-center gap-2">
-              <span className="text-slate-400 text-sm">{user.username}</span>
+              <span className="text-slate-600 dark:text-slate-400 text-sm">{user.username}</span>
               <Chip size="sm" color={roleColor} variant="flat">{roleLabel}</Chip>
             </NavbarItem>
 
@@ -102,7 +100,7 @@ export default function AppNavbar() {
               <Dropdown
                 placement="bottom-end"
                 classNames={{
-                  content: "!bg-[#1a1a2e] border border-white/10 backdrop-blur-xl",
+                  content: "bg-white dark:!bg-[#1a1a2e] border border-black/5 dark:border-white/10 backdrop-blur-xl",
                 }}
               >
                 <DropdownTrigger>
@@ -126,26 +124,26 @@ export default function AppNavbar() {
                     textValue={`Accesso come ${user.username}`}
                     isReadOnly
                     style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "var(--surface-05)",
+                      border: "1px solid var(--border-default)",
                       borderRadius: 12,
                       marginBottom: 6,
                     }}
                   >
-                    <div style={{ color: "#64748b", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
+                    <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>
                       Accesso come
                     </div>
-                    <div style={{ color: "#e2e8f0", fontWeight: 700 }}>{user.username}</div>
-                    <div style={{ color: "#475569", fontSize: "0.78rem", marginTop: 2 }}>{roleLabel}</div>
+                    <div style={{ color: "var(--text-primary)", fontWeight: 700 }}>{user.username}</div>
+                    <div style={{ color: "var(--text-subtle)", fontSize: "0.78rem", marginTop: 2 }}>{roleLabel}</div>
                   </DropdownItem>
                   <DropdownItem
                     key="logout"
                     textValue="Logout"
                     style={{
-                      background: "rgba(239,68,68,0.18)",
-                      border: "1px solid rgba(239,68,68,0.4)",
+                      background: "var(--alert-error-bg)",
+                      border: "1px solid var(--alert-error-border)",
                       borderRadius: 12,
-                      color: "#ef4444",
+                      color: "var(--alert-error-text)",
                       fontWeight: 800,
                     }}
                     onPress={handleLogout}
@@ -162,8 +160,8 @@ export default function AppNavbar() {
 
       <NavbarMenu
         style={{
-          background: "rgba(17,24,39,0.97)",
-          borderTop: "1px solid rgba(255,255,255,0.07)",
+          background: "var(--app-bg-mid)",
+          borderTop: "1px solid var(--border-soft)",
           paddingTop: 12,
         }}
       >
@@ -175,10 +173,10 @@ export default function AppNavbar() {
               style={{
                 display: "block",
                 padding: "0.65rem 0.25rem",
-                color: "#e2e8f0",
+                color: "var(--text-primary)",
                 fontWeight: 700,
                 textDecoration: "none",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                borderBottom: "1px solid var(--border-soft)",
               }}
             >
               {item.label}

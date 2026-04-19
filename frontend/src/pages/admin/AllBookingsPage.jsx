@@ -53,13 +53,13 @@ export default function AllBookingsPage() {
         || (b.status || "").toLowerCase().includes(s);
   });
 
-  const cardRow = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "0.9rem" };
+  const cardRow = { background: "var(--surface-04)", border: "1px solid var(--border-default)", borderRadius: 12, padding: "0.9rem" };
 
   return (
     <Layout>
       <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "#e2e8f0", margin: 0 }}>Tutte le Prenotazioni</h1>
-        <p style={{ color: "#64748b", marginTop: "0.5rem" }}>Storico globale delle prenotazioni effettuate da tutti gli utenti.</p>
+        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>Tutte le Prenotazioni</h1>
+        <p style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}>Storico globale delle prenotazioni effettuate da tutti gli utenti.</p>
       </div>
 
       <div style={{ marginBottom: "1.5rem" }}>
@@ -70,8 +70,8 @@ export default function AllBookingsPage() {
           variant="bordered"
           classNames={{
             base: "max-w-md",
-            inputWrapper: "border-white/10 bg-white/[0.05] hover:!border-yellow-500/50 focus-within:!border-yellow-500",
-            input: "!text-slate-100 placeholder:!text-slate-500",
+            inputWrapper: "border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:!border-yellow-500/50 focus-within:!border-yellow-500",
+            input: "!text-slate-900 dark:!text-slate-100 placeholder:!text-slate-600 dark:placeholder:!text-slate-500",
           }}
           startContent={<img src="/search.svg" alt="Cerca" style={{ width: 22, height: 22, objectFit: "contain" }} />}
         />
@@ -88,9 +88,9 @@ export default function AllBookingsPage() {
           <Spinner size="lg" color="warning" label="Caricamento prenotazioni..." />
         </div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "4rem 2rem", color: "#475569" }}>
+        <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--text-subtle)" }}>
           <img src="/addGeo.svg" alt="Nessuna" style={{ width: 56, height: 56, objectFit: "contain", margin: "0 auto 1rem" }} />
-          <h3 style={{ color: "#64748b" }}>Nessuna prenotazione trovata</h3>
+          <h3 style={{ color: "var(--text-muted)" }}>Nessuna prenotazione trovata</h3>
           <p>{searchTerm ? "Nessun risultato corrisponde alla ricerca." : "Non sono presenti prenotazioni nel sistema."}</p>
         </div>
       ) : (
@@ -103,16 +103,16 @@ export default function AllBookingsPage() {
                   <span style={{ color: "#bdb23c", fontFamily: "monospace", fontSize: "0.8rem", fontWeight: 700 }}>#{String(item.id).slice(-6)}</span>
                   <StatusChip status={item.status} />
                 </div>
-                <div style={{ color: "#e2e8f0", fontWeight: 700, marginBottom: "0.25rem" }}>{item.area?.name || `Area ${item.areaId}`}</div>
-                <div style={{ color: "#475569", fontSize: "0.8rem", marginBottom: "0.65rem" }}>Utente: {item.user?.username || `Utente ${item.userId}`}</div>
+                <div style={{ color: "var(--text-primary)", fontWeight: 700, marginBottom: "0.25rem" }}>{item.area?.name || `Area ${item.areaId}`}</div>
+                <div style={{ color: "var(--text-subtle)", fontSize: "0.8rem", marginBottom: "0.65rem" }}>Utente: {item.user?.username || `Utente ${item.userId}`}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
                   {[
                     { label: "Inizio", t: item.startTime },
                     { label: "Fine",   t: item.endTime },
                   ].map(({ label, t }) => (
-                    <div key={label} style={{ background: "rgba(255,255,255,0.02)", borderRadius: 10, padding: "0.55rem" }}>
-                      <div style={{ color: "#475569", fontSize: "0.7rem" }}>{label}</div>
-                      <div style={{ color: "#e2e8f0", fontWeight: 600, fontSize: "0.85rem" }}>{fmtDate(t)} {fmtTime(t)}</div>
+                    <div key={label} style={{ background: "var(--surface-02)", borderRadius: 10, padding: "0.55rem" }}>
+                      <div style={{ color: "var(--text-subtle)", fontSize: "0.7rem" }}>{label}</div>
+                      <div style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.85rem" }}>{fmtDate(t)} {fmtTime(t)}</div>
                     </div>
                   ))}
                 </div>
@@ -121,14 +121,14 @@ export default function AllBookingsPage() {
           </div>
 
           {/* Desktop table */}
-          <div className="hidden md:block" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, overflow: "hidden" }}>
+          <div className="hidden md:block" style={{ background: "var(--surface-04)", border: "1px solid var(--border-soft)", borderRadius: 14, overflow: "hidden" }}>
             <Table
               aria-label="Tabella globale prenotazioni"
               removeWrapper
               classNames={{
-                th: "bg-transparent text-slate-500 border-b border-white/[0.07] text-xs uppercase tracking-wider",
-                td: "border-b border-white/[0.07] text-slate-200 py-3",
-                tr: "hover:bg-white/[0.02] transition-colors",
+                th: "bg-transparent text-slate-500 border-b border-black/5 dark:border-white/[0.07] text-xs uppercase tracking-wider",
+                td: "border-b border-black/5 dark:border-white/[0.07] text-slate-800 dark:text-slate-200 py-3",
+                tr: "hover:bg-black/5 dark:hover:bg-white/[0.02] transition-colors",
               }}
             >
               <TableHeader columns={columns}>

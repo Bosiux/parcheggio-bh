@@ -8,7 +8,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { bookArea, getAvailability } from "../../api/parking.api.js";
 import Layout from "../../components/Layout.jsx";
 
-const CARD_BASE = "!bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl rounded-2xl";
+const CARD_BASE = "bg-white/80 dark:!bg-white/[0.04] border border-black/5 dark:border-white/[0.08] backdrop-blur-xl rounded-2xl";
 
 export default function BookingPage() {
   const { areaId } = useParams();
@@ -78,12 +78,12 @@ export default function BookingPage() {
             boxShadow: "0 20px 40px rgba(34,197,94,0.3)",
             animation: "popIn 0.4s ease",
           }}>✓</div>
-          <h1 style={{ color: "#e2e8f0", fontWeight: 800, fontSize: "1.75rem", marginBottom: "0.5rem" }}>
+          <h1 style={{ color: "var(--text-primary)", fontWeight: 800, fontSize: "1.75rem", marginBottom: "0.5rem" }}>
             Prenotazione Confermata!
           </h1>
-          <p style={{ color: "#64748b", marginBottom: "2rem" }}>Il tuo posto è stato riservato con successo.</p>
+          <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>Il tuo posto è stato riservato con successo.</p>
 
-          <Card shadow="none" classNames={{ base: "!bg-green-500/[0.06] border border-green-500/20 rounded-2xl mb-6 text-left" }}>
+          <Card shadow="none" classNames={{ base: "bg-green-500/[0.06] border border-green-500/20 rounded-2xl mb-6 text-left" }}>
             <CardBody style={{ padding: "1.5rem" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 {[
@@ -95,9 +95,9 @@ export default function BookingPage() {
                   { label: "Totale",           value: `€ ${(booking.totalPrice ?? previewTotal).toFixed(2)}` },
                   { label: "Scadenza",         value: booking.endTime ? new Date(booking.endTime).toLocaleString("it-IT") : "—" },
                 ].map(({ label, value }) => (
-                  <div key={label} style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.05)", paddingBottom: "0.5rem" }}>
-                    <span style={{ color: "#64748b", fontSize: "0.875rem" }}>{label}</span>
-                    <span style={{ color: "#e2e8f0", fontWeight: 600, fontSize: "0.875rem" }}>{value}</span>
+                  <div key={label} style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--border-soft)", paddingBottom: "0.5rem" }}>
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>{label}</span>
+                    <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.875rem" }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -105,7 +105,7 @@ export default function BookingPage() {
           </Card>
 
           <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
-            <Button variant="flat" onPress={() => navigate("/history")} style={{ color: "#94a3b8" }}>
+            <Button variant="flat" onPress={() => navigate("/history")} style={{ color: "var(--text-secondary)" }}>
               Vedi storico
             </Button>
             <Button
@@ -125,13 +125,13 @@ export default function BookingPage() {
   /* ── Booking form ── */
   return (
     <Layout>
-      <Button variant="flat" size="sm" onPress={() => navigate("/dashboard")} style={{ color: "#64748b", marginBottom: "1.5rem" }}>
+      <Button variant="flat" size="sm" onPress={() => navigate("/dashboard")} style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
         ← Torna alla Dashboard
       </Button>
 
       <div style={{ maxWidth: 560, margin: "0 auto" }}>
-        <h1 style={{ color: "#e2e8f0", fontWeight: 800, fontSize: "1.75rem", marginBottom: "0.5rem" }}>Prenota Parcheggio</h1>
-        <p style={{ color: "#64748b", marginBottom: "2rem" }}>Verifica la disponibilità e conferma la prenotazione.</p>
+        <h1 style={{ color: "var(--text-primary)", fontWeight: 800, fontSize: "1.75rem", marginBottom: "0.5rem" }}>Prenota Parcheggio</h1>
+        <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>Verifica la disponibilità e conferma la prenotazione.</p>
 
         {error && <div className="alert-error" style={{ marginBottom: "1.5rem" }}>⚠️ {error}</div>}
 
@@ -146,8 +146,8 @@ export default function BookingPage() {
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
                   <div>
-                    <span style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>AREA {areaId}</span>
-                    <h2 style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "1.3rem", margin: "0.25rem 0 0" }}>{areaName}</h2>
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>AREA {areaId}</span>
+                    <h2 style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: "1.3rem", margin: "0.25rem 0 0" }}>{areaName}</h2>
                   </div>
                   <Chip
                     color={isUnderMaintenance ? "warning" : available === 0 ? "danger" : available < total * 0.3 ? "warning" : "success"}
@@ -164,7 +164,7 @@ export default function BookingPage() {
                 )}
 
                 {/* Stats */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", padding: "1rem", background: "rgba(255,255,255,0.04)", borderRadius: 10, marginBottom: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", padding: "1rem", background: "var(--surface-04)", borderRadius: 10, marginBottom: "1.5rem" }}>
                   {[
                     { label: "Posti liberi", value: available,                                                      color: "#22c55e" },
                     { label: "Occupati",     value: total !== "—" && available !== "—" ? total - available : "—",  color: "#ef4444" },
@@ -172,14 +172,14 @@ export default function BookingPage() {
                   ].map(({ label, value, color }) => (
                     <div key={label} style={{ textAlign: "center" }}>
                       <div style={{ color, fontWeight: 800, fontSize: "1.5rem" }}>{value}</div>
-                      <div style={{ color: "#475569", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+                      <div style={{ color: "var(--text-subtle)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
                     </div>
                   ))}
                 </div>
 
                 {/* Booking form */}
                 <div style={{ background: "rgba(189,178,60,0.06)", border: "1px solid rgba(189,178,60,0.15)", borderRadius: 10, padding: "1rem" }}>
-                  <h3 style={{ color: "#94a3b8", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
+                  <h3 style={{ color: "var(--text-secondary)", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
                     Dettagli prenotazione
                   </h3>
                   <div style={{ display: "grid", gap: "0.75rem", marginBottom: "0.9rem" }}>
@@ -202,8 +202,8 @@ export default function BookingPage() {
                       { label: "🧾 Totale stimato", value: isUnderMaintenance ? "N/A" : `€ ${previewTotal.toFixed(2)}` },
                     ].map(({ label, value }) => (
                       <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ color: "#475569", fontSize: "0.875rem" }}>{label}</span>
-                        <span style={{ color: "#e2e8f0", fontWeight: 600, fontSize: "0.875rem" }}>{value}</span>
+                        <span style={{ color: "var(--text-subtle)", fontSize: "0.875rem" }}>{label}</span>
+                        <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "0.875rem" }}>{value}</span>
                       </div>
                     ))}
                   </div>
@@ -222,9 +222,9 @@ export default function BookingPage() {
           style={{
             height: 56,
             background: (isUnderMaintenance || available === 0)
-              ? "rgba(255,255,255,0.05)"
+              ? "var(--surface-05)"
               : "linear-gradient(135deg,#bdb23c,#9b9b00)",
-            color: (isUnderMaintenance || available === 0) ? "#475569" : "white",
+            color: (isUnderMaintenance || available === 0) ? "var(--text-subtle)" : "white",
             boxShadow: (isUnderMaintenance || available === 0) ? "none" : "0 10px 30px rgba(189,178,60,0.35)",
           }}
         >
@@ -239,24 +239,24 @@ export default function BookingPage() {
       {/* Confirmation Modal */}
       <Modal
         isOpen={isOpen} onOpenChange={onOpenChange} placement="center" backdrop="blur"
-        classNames={{ backdrop: "bg-black/60", base: "!bg-[#111827] border border-white/10 rounded-2xl" }}
+        classNames={{ backdrop: "bg-black/60", base: "bg-white dark:!bg-[#111827] border border-black/10 dark:border-white/10 rounded-2xl" }}
       >
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader style={{ color: "#e2e8f0", fontWeight: 700 }}>Conferma prenotazione</ModalHeader>
+              <ModalHeader style={{ color: "var(--text-primary)", fontWeight: 700 }}>Conferma prenotazione</ModalHeader>
               <ModalBody>
-                <p style={{ color: "#94a3b8" }}>
-                  Stai per prenotare un posto in <strong style={{ color: "#e2e8f0" }}>{areaName}</strong> con
-                  inizio <strong style={{ color: "#e2e8f0" }}>{new Date(`${startDate}T${startHour}:00`).toLocaleString("it-IT")}</strong> per{" "}
-                  <strong style={{ color: "#e2e8f0" }}>{durationHours} ore</strong>.
+                <p style={{ color: "var(--text-secondary)" }}>
+                  Stai per prenotare un posto in <strong style={{ color: "var(--text-primary)" }}>{areaName}</strong> con
+                  inizio <strong style={{ color: "var(--text-primary)" }}>{new Date(`${startDate}T${startHour}:00`).toLocaleString("it-IT")}</strong> per{" "}
+                  <strong style={{ color: "var(--text-primary)" }}>{durationHours} ore</strong>.
                 </p>
-                <p style={{ color: "#64748b", fontSize: "0.875rem" }}>
-                  Totale previsto: <strong style={{ color: "#e2e8f0" }}>€ {previewTotal.toFixed(2)}</strong>
+                <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
+                  Totale previsto: <strong style={{ color: "var(--text-primary)" }}>€ {previewTotal.toFixed(2)}</strong>
                 </p>
               </ModalBody>
               <ModalFooter>
-                <Button variant="flat" onPress={onClose} style={{ color: "#64748b" }}>Annulla</Button>
+                <Button variant="flat" onPress={onClose} style={{ color: "var(--text-muted)" }}>Annulla</Button>
                 <Button
                   id="modal-confirm-btn"
                   isLoading={loading}

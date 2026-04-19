@@ -50,16 +50,13 @@ export default function LoginPage() {
   };
 
   const inputCls = {
-    inputWrapper: "border-white/10 bg-white/[0.05] hover:!border-yellow-500/50 focus-within:!border-yellow-500",
-    input: "!text-slate-100 !font-medium placeholder:!text-slate-500",
-    label: "!text-slate-400",
+    inputWrapper: "border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:!border-yellow-500/50 focus-within:!border-yellow-500",
+    input: "!text-slate-900 dark:!text-slate-100 !font-medium placeholder:!text-slate-500",
+    label: "!text-slate-600 dark:!text-slate-400",
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: "linear-gradient(135deg, #0a0a0f 0%, #0d1b2a 50%, #0a0a1a 100%)" }}
-    >
+    <div className="min-h-screen flex items-center justify-center p-4 gradient-bg">
       {/* Ambient glows */}
       <div
         className="fixed top-[10%] left-[15%] w-96 h-96 rounded-full pointer-events-none"
@@ -73,7 +70,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[440px] relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/logoPBH.svg" alt="Logo" className="w-16 h-16 mx-auto mb-3 object-contain" />
+          <img src="/logoPBH.svg" alt="Logo" className="w-16 h-16 mx-auto mb-3 object-contain dark:bg-transparent bg-[#4d4812]/50 backdrop-blur-md p-2 rounded-2xl border border-[#bdb23c]/30 dark:border-none shadow-lg shadow-[#bdb23c]/20 dark:shadow-none" />
           <h1
             className="text-4xl font-extrabold m-0"
             style={{
@@ -85,18 +82,18 @@ export default function LoginPage() {
           >
             ParcheggiBH
           </h1>
-          <p className="text-slate-500 mt-2 text-sm">Comune di Brescia — Servizio di Parcheggi</p>
+          <p className="text-slate-600 dark:text-slate-500 mt-2 text-sm">Comune di Brescia — Servizio di Parcheggi</p>
         </div>
 
         {/* Card */}
         <Card
           shadow="none"
           classNames={{
-            base: "!bg-white/[0.04] border border-white/[0.08] backdrop-blur-2xl rounded-2xl",
+            base: "!bg-white/80 dark:!bg-white/[0.04] border border-black/10 dark:border-white/[0.08] backdrop-blur-2xl rounded-2xl",
           }}
         >
           <CardBody className="p-8">
-            <h2 className="text-lg font-bold text-slate-100 text-center mb-6">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 text-center mb-6">
               {mode === "login" ? "Accedi al portale" : "Crea account utente"}
             </h2>
 
@@ -189,7 +186,7 @@ export default function LoginPage() {
                   setMode((p) => p === "login" ? "register" : "login");
                   setError(""); setPassword(""); setConfirmPassword("");
                 }}
-                className="text-slate-400 font-semibold"
+                className="text-slate-600 dark:text-slate-400 font-semibold"
               >
                 {mode === "login" ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
               </Button>
@@ -197,7 +194,7 @@ export default function LoginPage() {
           </CardBody>
         </Card>
 
-        <p className="text-center text-slate-600 text-xs mt-6">
+        <p className="text-center text-slate-500 dark:text-slate-600 text-xs mt-6">
           © 2026 Comune di Brescia — ParcheggiBH
         </p>
       </div>

@@ -7,7 +7,7 @@ import Layout from "../../components/Layout.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import ParkingGeoMap from "../../components/ParkingGeoMap.jsx";
 
-const CARD_BASE = "!bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl rounded-2xl";
+const CARD_BASE = "bg-white/80 dark:!bg-white/[0.04] border border-black/5 dark:border-white/[0.08] backdrop-blur-xl rounded-2xl";
 
 function AvailabilityBadge({ available, total }) {
   const pct = total > 0 ? (available / total) * 100 : 0;
@@ -55,17 +55,17 @@ export default function DashboardPage() {
     <Layout>
       {/* Header */}
       <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "#e2e8f0", margin: 0 }}>
+        <h1 style={{ fontSize: "1.875rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
           Benvenuto, {user?.username} 👋
         </h1>
-        <p style={{ color: "#64748b", marginTop: "0.5rem" }}>
+        <p style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}>
           Visualizza la disponibilità delle aree e prenota il tuo posto.
         </p>
       </div>
 
       {/* Toolbar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-        <h2 style={{ color: "#94a3b8", fontSize: "0.8rem", fontWeight: 500, margin: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        <h2 style={{ color: "var(--text-secondary)", fontSize: "0.8rem", fontWeight: 500, margin: 0, textTransform: "uppercase", letterSpacing: "0.06em" }}>
           Aree disponibili ({areas.length})
         </h2>
         <Tooltip content="Aggiorna ora" placement="left">
@@ -104,9 +104,9 @@ export default function DashboardPage() {
 
       {/* Empty */}
       {!loading && !error && areas.length === 0 && (
-        <div style={{ textAlign: "center", padding: "4rem 2rem", color: "#475569" }}>
+        <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--text-subtle)" }}>
           <img src="/nopark.svg" alt="Nessuna area" style={{ width: 100, height: 100, objectFit: "contain", margin: "0 auto 1rem" }} />
-          <h3 style={{ color: "#64748b" }}>Nessuna area disponibile</h3>
+          <h3 style={{ color: "var(--text-muted)" }}>Nessuna area disponibile</h3>
           <p>Non ci sono aree parcheggio attive al momento.</p>
         </div>
       )}
@@ -152,11 +152,11 @@ export default function DashboardPage() {
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
                         <img src="/park.svg" alt="Area" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                        <span style={{ color: "#94a3b8", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                        <span style={{ color: "var(--text-secondary)", fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                           AREA {area.id}
                         </span>
                       </div>
-                      <h3 style={{ color: "#e2e8f0", fontWeight: 700, fontSize: "1.1rem", margin: 0 }}>
+                      <h3 style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: "1.1rem", margin: 0 }}>
                         {area.name || `Parcheggio ${area.id}`}
                       </h3>
                     </div>
@@ -169,10 +169,10 @@ export default function DashboardPage() {
                   {/* Availability bar */}
                   <div style={{ marginBottom: "1rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.4rem" }}>
-                      <span style={{ color: "#64748b", fontSize: "0.75rem" }}>Disponibilità</span>
-                      <span style={{ color: "#94a3b8", fontSize: "0.75rem", fontWeight: 600 }}>{pct}%</span>
+                      <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>Disponibilità</span>
+                      <span style={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 600 }}>{pct}%</span>
                     </div>
-                    <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
+                    <div style={{ height: 6, background: "var(--surface-06)", borderRadius: 99, overflow: "hidden" }}>
                       <div style={{
                         height: "100%", width: `${pct}%`, borderRadius: 99,
                         background: pct === 0 ? "#ef4444" : pct < 30 ? "#f59e0b" : "linear-gradient(90deg,#bdb23c,#9b9b00)",
@@ -186,11 +186,11 @@ export default function DashboardPage() {
                     {[
                       { label: "Liberi",   value: available,          color: "#22c55e" },
                       { label: "Occupati", value: total - available,  color: "#ef4444" },
-                      { label: "Totale",   value: total,              color: "#94a3b8" },
+                      { label: "Totale",   value: total,              color: "var(--text-secondary)" },
                       { label: "Tariffa",  value: isUnderMaintenance ? "Sospesa" : `€${hourlyRate.toFixed(2)}/h`, color: "#bdb23c" },
                     ].map(({ label, value, color }) => (
                       <div key={label}>
-                        <div style={{ color: "#64748b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+                        <div style={{ color: "var(--text-muted)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
                         <div style={{ color, fontWeight: 700, fontSize: "1.2rem" }}>{value}</div>
                       </div>
                     ))}
@@ -202,8 +202,8 @@ export default function DashboardPage() {
                     borderRadius: 10, padding: "0.65rem 0.75rem",
                     display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem",
                   }}>
-                    <span style={{ color: "#64748b", fontSize: "0.75rem" }}>Stima rapida</span>
-                    <span style={{ color: "#e2e8f0", fontSize: "0.8rem", fontWeight: 600 }}>
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>Stima rapida</span>
+                    <span style={{ color: "var(--text-primary)", fontSize: "0.8rem", fontWeight: 600 }}>
                       {isUnderMaintenance
                         ? "Costi non disponibili"
                         : `1h: €${(hourlyRate).toFixed(2)} · 2h: €${(hourlyRate * 2).toFixed(2)}`}
@@ -221,7 +221,7 @@ export default function DashboardPage() {
                     style={
                       isBookable
                         ? { background: "linear-gradient(135deg, #bdb23c, #9b9b00)", boxShadow: "0 8px 20px rgba(189,178,60,0.3)" }
-                        : { background: "rgba(255,255,255,0.05)", color: "#475569" }
+                        : { background: "var(--surface-05)", color: "var(--text-subtle)" }
                     }
                   >
                     {isUnderMaintenance ? "Area in manutenzione" : isFull ? "Parcheggio pieno" : "Prenota ora →"}
@@ -233,7 +233,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <p style={{ color: "#475569", fontSize: "0.75rem", textAlign: "center", marginTop: "2rem" }}>
+      <p style={{ color: "var(--text-subtle)", fontSize: "0.75rem", textAlign: "center", marginTop: "2rem" }}>
         Aggiornamento automatico ogni 30 secondi
       </p>
     </Layout>

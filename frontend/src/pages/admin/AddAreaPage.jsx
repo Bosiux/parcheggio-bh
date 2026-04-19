@@ -5,13 +5,13 @@ import { useNavigate } from "react-router-dom";
 import { addArea } from "../../api/admin.api.js";
 import Layout from "../../components/Layout.jsx";
 
-const CARD_BASE = "!bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl rounded-2xl";
+const CARD_BASE = "bg-white/80 dark:!bg-white/[0.04] border border-black/5 dark:border-white/[0.08] backdrop-blur-xl rounded-2xl";
 
 const inputCls = {
-  inputWrapper: "border-white/10 bg-white/[0.05] hover:!border-yellow-500/50 focus-within:!border-yellow-500",
-  input: "!text-slate-100 placeholder:!text-slate-500",
-  label: "!text-slate-400",
-  description: "!text-slate-600",
+  inputWrapper: "border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:!border-yellow-500/50 focus-within:!border-yellow-500",
+  input: "!text-slate-900 dark:!text-slate-100 placeholder:!text-slate-500",
+  label: "!text-slate-700 dark:!text-slate-400",
+  description: "!text-slate-500 dark:!text-slate-600",
 };
 
 export default function AddAreaPage() {
@@ -49,10 +49,10 @@ export default function AddAreaPage() {
   return (
     <Layout>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
-        <h1 style={{ color: "#e2e8f0", fontWeight: 800, fontSize: "1.75rem", marginBottom: "0.5rem" }}>
+        <h1 style={{ color: "var(--text-primary)", fontWeight: 800, fontSize: "1.75rem", marginBottom: "0.5rem" }}>
           Aggiungi Area Parcheggio
         </h1>
-        <p style={{ color: "#64748b", marginBottom: "2rem" }}>
+        <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>
           Registra una nuova area nel sistema di gestione.
         </p>
 
@@ -121,9 +121,9 @@ export default function AddAreaPage() {
 
               {(form.id || form.capacity) && (
                 <div style={{ background: "rgba(189,178,60,0.06)", border: "1px solid rgba(189,178,60,0.15)", borderRadius: 10, padding: "1rem" }}>
-                  <p style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Anteprima</p>
-                  <p style={{ color: "#e2e8f0", fontWeight: 600, margin: 0 }}>{form.name || `Parcheggio ${form.id}`}</p>
-                  <p style={{ color: "#475569", fontSize: "0.875rem", margin: "0.25rem 0 0" }}>ID: {form.id || "—"} · Capienza: {form.capacity || "—"} posti</p>
+                  <p style={{ color: "var(--text-muted)", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>Anteprima</p>
+                  <p style={{ color: "var(--text-primary)", fontWeight: 600, margin: 0 }}>{form.name || `Parcheggio ${form.id}`}</p>
+                  <p style={{ color: "var(--text-subtle)", fontSize: "0.875rem", margin: "0.25rem 0 0" }}>ID: {form.id || "—"} · Capienza: {form.capacity || "—"} posti</p>
                 </div>
               )}
 
